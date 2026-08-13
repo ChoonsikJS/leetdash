@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -134,13 +134,18 @@ describe("validate-submission-pr", () => {
     });
   });
 
-  it("rejects deletions in the fast submission-only path", async () => {
+  it("accepts replacing one catalog submission with another under the author path", async () => {
     const repo = await createRepoFixture();
+    await unlink(path.join(repo, "submissions", "ada", "programmers", "12906", "solution.java"));
 
-    await expect(runValidator(repo, "D\tsubmissions/ada/top-interview-easy/1/Solution.java\n")).rejects.toMatchObject({
-      stderr: expect.stringContaining("may add, update, or rename files, not delete them"),
-      githubOutput: "submission_only=true\n",
-    });
+    const result = await runValidatorForAuthor(
+      repo,
+      "ada",
+      "D\tsubmissions/ada/programmers/12906/solution.java\nA\tsubmissions/ada/swea/1206/solution.py\n",
+    );
+
+    expect(result.stdout).toContain("validated 2 changed submission file(s)");
+    expect(result.githubOutput).toBe("submission_only=true\n");
   });
 
   it("accepts submission-only changes under the pull request author path", async () => {
