@@ -35,6 +35,66 @@
 			"displayName": "김지원",
 			"githubUsername": "jiwanne",
 			"active": true
+		},
+		{
+			"id": "chanju",
+			"displayName": "오찬주",
+			"githubUsername": "ohchanju3",
+			"active": true
+		},
+		{
+			"id": "ChoonsikJS",
+			"displayName": "공준식",
+			"githubUsername": "ChoonsikJS",
+			"active": true
+		},
+		{
+			"id": "Jin-yujin",
+			"displayName": "진유진",
+			"githubUsername": "Jin-yujin",
+			"active": true
+		},
+		{
+			"id": "r0mmmy",
+			"displayName": "한새롬",
+			"githubUsername": "r0mmmy",
+			"active": true
+		},
+		{
+			"id": "yunaoov",
+			"displayName": "양유나",
+			"githubUsername": "yunaoov",
+			"active": true
+		},
+		{
+			"id": "ysw981209-rgb",
+			"displayName": "유승완",
+			"githubUsername": "ysw981209-rgb",
+			"active": true
+		},
+		{
+			"id": "ijeonghwan",
+			"displayName": "이정환",
+			"githubUsername": "ijeonghwan",
+			"active": true
+		},
+		{
+			"id": "daamont",
+			"displayName": "박수민",
+			"githubUsername": "daamont",
+			"active": true
+		},
+		{
+			"id": "leegy21",
+			"displayName": "이가영",
+			"githubUsername": "leegy21",
+			"active": true
+		},
+		{
+			"id": "anfdml",
+			"displayName": "김준성",
+			"githubUsername": "anfdml",
+			"active": true
 		}
     ]
 }

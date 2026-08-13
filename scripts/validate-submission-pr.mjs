@@ -178,13 +178,18 @@ function isParticipantSubmissionPath(filePath) {
   return filePath.split("/").length >= 5;
 }
 
+function isDeletedSubmissionStatus(status) {
+  return status === "D" || status === "removed";
+}
+
 function isAllowedSubmissionStatus(status) {
   return status === "A"
     || status === "M"
     || status.startsWith("R")
     || status === "added"
     || status === "modified"
-    || status === "renamed";
+    || status === "renamed"
+    || isDeletedSubmissionStatus(status);
 }
 
 function validateMeta(filePath, errors) {
@@ -227,6 +232,7 @@ function validateSubmissionFiles(changedFiles, options = {}) {
 
   for (const changedFile of changedFiles) {
     const filePath = changedFile.path;
+    const deleted = isDeletedSubmissionStatus(changedFile.status);
     const user = findUserForPath(users, filePath);
     if (!user) {
       errors.push(`${filePath}: submission path must belong to a registered user in data/users.json.`);
@@ -239,7 +245,7 @@ function validateSubmissionFiles(changedFiles, options = {}) {
     }
 
     if (!isAllowedSubmissionStatus(changedFile.status)) {
-      errors.push(`${filePath}: submission-only PRs may add, update, or rename files, not delete them.`);
+      errors.push(`${filePath}: unsupported submission change status ${changedFile.status}.`);
       continue;
     }
 
@@ -259,9 +265,9 @@ function validateSubmissionFiles(changedFiles, options = {}) {
       errors.push(`${filePath}: file must be solution.<supported ext>, README.md, or meta.json.`);
     }
 
-    if (checkFileExists && !existsSync(path.join(process.cwd(), filePath))) {
+    if (checkFileExists && !deleted && !existsSync(path.join(process.cwd(), filePath))) {
       errors.push(`${filePath}: changed file does not exist in the checkout.`);
-    } else if (checkFileExists && filename.toLowerCase() === "meta.json") {
+    } else if (checkFileExists && !deleted && filename.toLowerCase() === "meta.json") {
       validateMeta(filePath, errors);
     }
   }
