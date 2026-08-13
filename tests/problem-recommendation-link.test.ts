@@ -5,6 +5,16 @@ import {
   getUserSubmissionRoute,
 } from "@/lib/problem-recommendation-link";
 
+function expectBalancedPlatformRecommendations(prompt: string) {
+  expect(prompt).toContain("LeetCode와 Programmers만 추천 대상으로 삼고");
+  expect(prompt).toContain("두 플랫폼의 후보를 서로 독립적으로 선정한다");
+  expect(prompt).toContain("LeetCode 3개와 Programmers 3개를 추천한다");
+  expect(prompt).toContain("3개보다 적으면 확인된 문제까지만 추천");
+  expect(prompt).toContain("해당 플랫폼에는 더 추천할 문제가 없다고 명시한다");
+  expect(prompt).toContain("부족한 수를 다른 플랫폼 문제나 추천 기준에 맞지 않는 문제로 억지로 채우지 않는다");
+  expect(prompt).toContain("플랫폼별 추천 개수와 부족 여부");
+}
+
 describe("problem recommendation link", () => {
   it("points at the user's submissions directory on the master branch", () => {
     expect(getUserSubmissionRoute("submissions/ada user")).toBe(
@@ -22,8 +32,9 @@ describe("problem recommendation link", () => {
     expect(prompt).toContain("숙련도 부족이 아니라 학습 데이터의 공백 또는 낮은 노출로 표현한다");
     expect(prompt).toContain("이미 푼 문제는 추천하지 않는다");
     expect(prompt).toContain("Mermaid pie 차트");
-    expect(prompt).toContain("미풀이 문제 6개");
+    expect(prompt).toContain("미풀이 문제를 최대 6개");
     expect(prompt).toContain("확인하지 못한 사실이나 문제를 만들어내지 않는다");
+    expectBalancedPlatformRecommendations(prompt);
   });
 
   it("recommends a beginner path without opening a missing repository for a new user", () => {
@@ -35,6 +46,7 @@ describe("problem recommendation link", () => {
     expect(prompt).toContain("기초 유형을 단계적으로 익힐 수 있는 문제 6개");
     expect(prompt).toContain("가장 먼저 풀 문제 1개");
     expect(prompt).toContain("정답 코드");
+    expectBalancedPlatformRecommendations(prompt);
   });
 
   it("opens ChatGPT search with the complete prompt", () => {
