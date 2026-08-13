@@ -89,6 +89,12 @@
 			"displayName": "이가영",
 			"githubUsername": "leegy21",
 			"active": true
+		},
+		{
+			"id": "anfdml",
+			"displayName": "김준성",
+			"githubUsername": "anfdml",
+			"active": true
 		}
     ]
 }
