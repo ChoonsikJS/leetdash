@@ -117,7 +117,7 @@ describe("submission PR sweeper eligibility", () => {
     });
   });
 
-  it("rejects removed files even under the author path", () => {
+  it("accepts removed catalog files under the author path", () => {
     const decision = evaluate({
       pullRequest: makePullRequest(),
       files: [{ ...validFile, status: "removed" }],
@@ -126,10 +126,7 @@ describe("submission PR sweeper eligibility", () => {
       catalog,
     });
 
-    expect(decision).toEqual({
-      eligible: false,
-      reason: "submissions/ada/top-interview-easy/1/Solution.java: submission-only PRs may add, update, or rename files, not delete them.",
-    });
+    expect(decision).toEqual({ eligible: true });
   });
 
   it("accepts renamed files with a valid destination under the author path", () => {
