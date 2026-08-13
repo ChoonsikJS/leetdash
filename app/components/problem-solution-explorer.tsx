@@ -293,6 +293,7 @@ export function ProblemSolutionExplorer({
                 <SolutionReviewPanel
                   pathKey={selectedSolver.submission.solutionPathKey ?? null}
                   contentKey={selectedSolver.submission.solutionContentKey ?? null}
+                  language={selectedSolver.submission.language}
                   onFocusLine={handleReviewFocus}
                   activeReviewIndex={activeReviewIndex}
                   onReviewHover={setActiveReviewIndex}
