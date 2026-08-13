@@ -83,6 +83,12 @@
 			"displayName": "박수민",
 			"githubUsername": "daamont",
 			"active": true
+		},
+		{
+			"id": "leegy21",
+			"displayName": "이가영",
+			"githubUsername": "leegy21",
+			"active": true
 		}
     ]
 }
