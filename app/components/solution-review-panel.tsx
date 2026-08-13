@@ -9,6 +9,8 @@ import {
   type ReviewLoadResult,
   type LineReference,
 } from "@/lib/solution-assets";
+import { tokenizeCodeLine } from "@/app/components/solution-code-viewer-helpers";
+import syntaxStyles from "./solution-code-viewer.module.css";
 import styles from "./solution-review-panel.module.css";
 
 // ── Pure helpers (tested directly) ──────────────────────────────────────────
@@ -43,11 +45,51 @@ export function lineLabel(reference: LineReference): string {
   return `코드 L${reference.start}–L${reference.end}으로 이동`;
 }
 
+export type ReviewMarkdownBlock =
+  | { kind: "prose"; text: string }
+  | { kind: "code"; text: string };
+
+/**
+ * Splits the safe review text into prose and fenced code without turning any
+ * Markdown into HTML. Keeping the renderer text-node-only preserves the
+ * review artifact's trust boundary while allowing code fences to be styled.
+ */
+export function parseReviewMarkdown(text: string): ReviewMarkdownBlock[] {
+  const lines = text.split("\n");
+  const blocks: ReviewMarkdownBlock[] = [];
+  let kind: ReviewMarkdownBlock["kind"] = "prose";
+  let buffer: string[] = [];
+
+  const flush = () => {
+    if (buffer.length === 0) return;
+    blocks.push({ kind, text: buffer.join("\n") });
+    buffer = [];
+  };
+
+  for (const line of lines) {
+    if (kind === "prose" && /^\s*```[^`]*$/.test(line)) {
+      flush();
+      kind = "code";
+      continue;
+    }
+    if (kind === "code" && /^\s*```\s*$/.test(line)) {
+      flush();
+      kind = "prose";
+      continue;
+    }
+    buffer.push(line);
+  }
+  flush();
+
+  return blocks;
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export type SolutionReviewPanelProps = {
   pathKey: string | null;
   contentKey: string | null;
+  language?: string | null;
   basePath?: string;
   onFocusLine: (ref: LineReference) => void;
   activeReviewIndex?: number | null;
@@ -58,6 +100,7 @@ export type SolutionReviewPanelProps = {
 export function SolutionReviewPanel({
   pathKey,
   contentKey,
+  language,
   basePath,
   onFocusLine,
   activeReviewIndex = null,
@@ -140,6 +183,7 @@ export function SolutionReviewPanel({
           onFocusLine={handleFocusLine}
           activeReviewIndex={activeReviewIndex}
           onReviewHover={onReviewHover}
+          language={language}
         />
       </div>
     </section>
@@ -153,11 +197,13 @@ function ReviewContentView({
   onFocusLine,
   activeReviewIndex,
   onReviewHover,
+  language,
 }: {
   view: ReviewPanelView;
   onFocusLine: (ref: LineReference) => void;
   activeReviewIndex: number | null;
   onReviewHover?: (index: number | null) => void;
+  language?: string | null;
 }) {
   switch (view.kind) {
     case "loading":
@@ -197,7 +243,7 @@ function ReviewContentView({
                     }
                   }}
                 >
-                  <p className={styles.text}>{review.text}</p>
+                  <ReviewMarkdown text={review.text} language={language} />
                   <button
                     className={`${styles.lineButton} button`}
                     type="button"
@@ -212,9 +258,9 @@ function ReviewContentView({
               ))}
             </div>
           ) : (
-            <p className={styles.text} data-testid="review-text">
-              {artifact.text}
-            </p>
+            <div data-testid="review-text">
+              <ReviewMarkdown text={artifact.text} language={language} />
+            </div>
           )}
           <a
             className={`${styles.commentLink} github-link`}
@@ -257,4 +303,52 @@ function ReviewContentView({
     case "idle":
       return null;
   }
+}
+
+function ReviewMarkdown({
+  text,
+  language,
+}: {
+  text: string;
+  language?: string | null;
+}) {
+  return (
+    <div className={styles.markdown}>
+      {parseReviewMarkdown(text).map((block, blockIndex) => {
+        if (block.kind === "prose") {
+          return (
+            <p key={blockIndex} className={styles.text}>
+              {block.text}
+            </p>
+          );
+        }
+
+        const codeLines = block.text.split("\n");
+
+        return (
+          <div key={blockIndex} className={styles.codeBlock}>
+            {language && <div className={styles.codeLanguage}>{language}</div>}
+            <pre className={styles.codeScroller} data-testid="review-code-block">
+              <code>
+                {codeLines.map((line, lineIndex) => (
+                  <span key={lineIndex} className={styles.codeLine}>
+                    {tokenizeCodeLine(line, language ?? "").map((token, tokenIndex) => (
+                      <span
+                        key={tokenIndex}
+                        className={syntaxStyles[`token-${token.kind}`]}
+                        data-token-kind={token.kind}
+                      >
+                        {token.text}
+                      </span>
+                    ))}
+                    {lineIndex < codeLines.length - 1 ? "\n" : null}
+                  </span>
+                ))}
+              </code>
+            </pre>
+          </div>
+        );
+      })}
+    </div>
+  );
 }

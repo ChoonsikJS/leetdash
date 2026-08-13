@@ -1,5 +1,5 @@
 import { describe, afterEach, expect, it, vi } from "vitest";
-import { mapReviewToView, lineLabel, type ReviewPanelView } from "@/app/components/solution-review-panel";
+import { mapReviewToView, lineLabel, parseReviewMarkdown, type ReviewPanelView } from "@/app/components/solution-review-panel";
 import { findReviewIndexForLine } from "@/app/components/solution-code-viewer-helpers";
 import { loadReview, assertHex64, type ReviewLoadResult, type ReviewArtifact, type Hex64, isAbortError } from "@/lib/solution-assets";
 
@@ -194,6 +194,28 @@ describe("lineLabel", () => {
   it("handles line 1 correctly", () => {
     expect(lineLabel({ start: 1, end: 1 })).toBe("코드 L1로 이동");
     expect(lineLabel({ start: 1, end: 5 })).toBe("코드 L1–L5으로 이동");
+  });
+});
+
+describe("parseReviewMarkdown", () => {
+  it("separates fenced code from review prose and removes fence metadata", () => {
+    expect(parseReviewMarkdown("설명\n```java\nint answer = 42;\n```\n마무리")).toEqual([
+      { kind: "prose", text: "설명" },
+      { kind: "code", text: "int answer = 42;" },
+      { kind: "prose", text: "마무리" },
+    ]);
+  });
+
+  it("treats an unclosed fence as code through the end of the review", () => {
+    expect(parseReviewMarkdown("```python\nreturn value")).toEqual([
+      { kind: "code", text: "return value" },
+    ]);
+  });
+
+  it("leaves inline backticks and HTML-looking text as safe prose", () => {
+    expect(parseReviewMarkdown("`value` <script>alert(1)</script>")).toEqual([
+      { kind: "prose", text: "`value` <script>alert(1)</script>" },
+    ]);
   });
 });
 
