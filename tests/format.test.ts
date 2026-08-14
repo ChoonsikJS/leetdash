@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatDateKey, formatSnapshotDateTime } from "@/lib/format";
+import { difficultyLabel, formatDateKey, formatSnapshotDateTime } from "@/lib/format";
+
+describe("difficultyLabel", () => {
+  it("labels SWEA problems without a D-level as unclassified", () => {
+    expect(difficultyLabel("Unknown")).toBe("미분류");
+  });
+});
 
 describe("formatDateKey", () => {
   it("formats Seoul date keys independently of the process timezone", () => {

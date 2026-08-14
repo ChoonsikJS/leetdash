@@ -4,10 +4,17 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const LEETCODE_ONLY = process.argv[2] === "--leetcode-only";
-const inputPath = LEETCODE_ONLY ? undefined : process.argv[2];
+const SWEA_ONLY = process.argv[2] === "--swea-only";
+const inputPath = LEETCODE_ONLY || SWEA_ONLY ? undefined : process.argv[2];
 const markdown = inputPath ? readFileSync(inputPath, "utf8") : "";
 
 const toProblemKey = (provider, problemId) => `${provider}:${String(problemId)}`;
+const generatedDateInSeoul = () => new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+}).format(new Date());
 
 function createLeetCodeProblem({ leetcodeId, slug, title, difficulty }) {
   const problemId = String(leetcodeId);
@@ -333,10 +340,11 @@ async function fetchSweaProblems() {
 }
 
 function createSweaList(rawProblems) {
-  // Filter out "Unknown" difficulty (mock tests, samples) — they have no D level badge
-  const known = rawProblems.filter((p) => p.difficulty !== "Unknown");
+  // Mock tests and samples do not have a D-level badge, but they are still
+  // valid SWEA submission targets and must remain in the catalog.
+  const catalogProblems = rawProblems.filter((p) => p.title !== "Unknown");
 
-  const problems = known.map((p) => ({
+  const problems = catalogProblems.map((p) => ({
     provider: "swea",
     problemId: p.id,
     problemKey: toProblemKey("swea", p.id),
@@ -344,7 +352,7 @@ function createSweaList(rawProblems) {
     difficulty: p.difficulty,
     sourceUrl: `https://swexpertacademy.com/main/code/problem/problemDetail.do?problemId=${p.id}`,
   }));
-  const items = known.map((p, idx) => ({
+  const items = catalogProblems.map((p, idx) => ({
     problemKey: toProblemKey("swea", p.id),
     order: idx + 1,
     section: p.difficulty,
@@ -370,13 +378,15 @@ const providerList = (problem, title) => ({
 });
 
 async function main() {
-  const SHOULD_FETCH_LEETCODE = LEETCODE_ONLY || !inputPath;
-  const existingCatalog = LEETCODE_ONLY
+  const SHOULD_FETCH_LEETCODE = LEETCODE_ONLY || (!inputPath && !SWEA_ONLY);
+  const existingCatalog = LEETCODE_ONLY || SWEA_ONLY
     ? JSON.parse(readFileSync(resolve(root, "data/problem-catalog.json"), "utf8"))
     : null;
   // Base LeetCode lists
   const lists = LEETCODE_ONLY
     ? existingCatalog.lists.filter((list) => list.key !== "leetcode")
+    : SWEA_ONLY
+      ? [...existingCatalog.lists]
     : [topInterviewEasy, leetcode75, topInterview150];
 
   if (SHOULD_FETCH_LEETCODE) {
@@ -384,14 +394,14 @@ async function main() {
     const leetcodeProblems = await fetchLeetCodeProblems();
     lists.push(createLeetCodeCatalogList(leetcodeProblems));
     console.error(`[build-catalog] LeetCode: ${leetcodeProblems.length} problems added`);
-  } else if (!LEETCODE_ONLY) {
+  } else if (!LEETCODE_ONLY && !SWEA_ONLY) {
     const existingCatalog = JSON.parse(readFileSync(resolve(root, "data/problem-catalog.json"), "utf8"));
     const leetcodeList = existingCatalog.lists.find((list) => list.key === "leetcode");
     if (leetcodeList) lists.push(leetcodeList);
   }
 
   // Fetch Programmers problems from API unless a markdown input file was provided
-  const SHOULD_FETCH_PROGRAMMERS = !inputPath && !LEETCODE_ONLY;
+  const SHOULD_FETCH_PROGRAMMERS = !inputPath && !LEETCODE_ONLY && !SWEA_ONLY;
   let programmersSourceUrl = "";
 
   if (SHOULD_FETCH_PROGRAMMERS) {
@@ -420,7 +430,7 @@ async function main() {
     });
 
     console.error(`[build-catalog] Programmers: ${programmerProblems.length} problems added`);
-  } else if (!LEETCODE_ONLY) {
+  } else if (!LEETCODE_ONLY && !SWEA_ONLY) {
     // Fallback: single hardcoded entry (legacy mode with markdown input)
     const programmersProblem = {
       provider: "programmers",
@@ -438,15 +448,25 @@ async function main() {
     // SWEA (fetch all problems from SW Expert Academy)
     console.error("[build-catalog] Fetching SWEA problems...");
     const sweaRaw = await fetchSweaProblems();
-    lists.push(createSweaList(sweaRaw));
-    console.error(`[build-catalog] SWEA: ${lists[lists.length - 1].problems.length} problems added`);
+    const sweaList = createSweaList(sweaRaw);
+    if (SWEA_ONLY) {
+      const sweaIndex = lists.findIndex((list) => list.key === "swea");
+      if (sweaIndex === -1) lists.push(sweaList);
+      else lists.splice(sweaIndex, 1, sweaList);
+    } else {
+      lists.push(sweaList);
+    }
+    console.error(`[build-catalog] SWEA: ${sweaList.problems.length} problems added`);
   }
 
   // Build unique problems map
   const problemsByKey = new Map();
-  if (LEETCODE_ONLY) {
+  if (existingCatalog) {
+    const refreshedProvider = LEETCODE_ONLY ? "leetcode" : "swea";
     for (const problem of existingCatalog.problems) {
-      problemsByKey.set(problem.problemKey, problem);
+      if (problem.provider !== refreshedProvider) {
+        problemsByKey.set(problem.problemKey, problem);
+      }
     }
   }
   for (const list of lists) {
@@ -459,7 +479,7 @@ async function main() {
   }
 
   const catalog = {
-    generatedAt: new Date().toISOString().slice(0, 10),
+    generatedAt: generatedDateInSeoul(),
     sources: [...new Set([
       ...(existingCatalog?.sources ?? []),
       "https://leetcode.com/problemset/all/",
