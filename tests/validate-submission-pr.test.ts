@@ -123,6 +123,36 @@ describe("validate-submission-pr", () => {
     expect(result.githubOutput).toBe("submission_only=false\n");
   });
 
+  it("validates submission files in a mixed application pull request", async () => {
+    const repo = await createRepoFixture();
+
+    const result = await runValidatorForAuthor(
+      repo,
+      "ada",
+      "M\tapp/page.tsx\nM\tsubmissions/ada/top-interview-easy/1/Solution.java\n",
+    );
+
+    expect(result.stdout).toContain("submission_only=false; validated 1 changed submission file(s)");
+    expect(result.githubOutput).toBe("submission_only=false\n");
+  });
+
+  it("rejects an invalid submission filename in a mixed application pull request", async () => {
+    const repo = await createRepoFixture();
+    await writeFile(
+      path.join(repo, "submissions", "ada", "top-interview-easy", "1", "answer.java"),
+      "class Solution {}\n",
+    );
+
+    await expect(runValidatorForAuthor(
+      repo,
+      "ada",
+      "M\tapp/page.tsx\nA\tsubmissions/ada/top-interview-easy/1/answer.java\n",
+    )).rejects.toMatchObject({
+      stderr: expect.stringContaining("file must be solution.<supported ext>, README.md, or meta.json"),
+      githubOutput: "submission_only=false\n",
+    });
+  });
+
   it("rejects submission-only changes for an unknown provider list", async () => {
     const repo = await createRepoFixture();
     await mkdir(path.join(repo, "submissions", "ada", "unknown", "1"), { recursive: true });
