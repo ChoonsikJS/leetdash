@@ -82,7 +82,7 @@ function reviewOptions(overrides = {}) {
       mascotUrl,
       apiKey: "test-api-key",
       model: "opencode-go/deepseek-v4-flash",
-      submissionOnly: true,
+      reviewApplicable: true,
       ...overrides,
     },
   };
@@ -223,7 +223,7 @@ describe("reviewPullRequest", () => {
       mascotUrl,
       apiKey: "test-api-key",
       model: "opencode-go/deepseek-v4-flash",
-      submissionOnly: true,
+      reviewApplicable: true,
     });
 
     expect(checks).toHaveLength(1);
@@ -701,7 +701,7 @@ describe("reviewPullRequest", () => {
   });
 
   it("emits a successful not-applicable check without review service or comment calls", async () => {
-    const { options, completed } = reviewOptions({ submissionOnly: false });
+    const { options, completed } = reviewOptions({ reviewApplicable: false });
     let requests = 0;
     options.openCodeClient.review = async () => { requests += 1; };
     options.githubClient.upsertReviewComment = async () => { requests += 1; };
@@ -761,7 +761,7 @@ describe("reviewPullRequest", () => {
 
   it("does not discover changed files for a not-applicable review", async () => {
     const { options, completed } = reviewOptions({
-      submissionOnly: false,
+      reviewApplicable: false,
       changedFiles: undefined,
       loadChangedFiles: async () => { throw new Error("must not run"); },
     });
@@ -779,7 +779,7 @@ describe("reviewPullRequest", () => {
     ["ownership rejection", { files: [{ status: "added", filename: secondPath }] }],
     ["catalog rejection", { files: [{ status: "added", filename: "submissions/ada/top-interview-easy/999/solution.java" }] }],
   ])("does not turn trusted-scope %s into a successful check", async (_name, override) => {
-    const { options, completed } = reviewOptions({ submissionOnly: undefined, changedFiles: undefined });
+    const { options, completed } = reviewOptions({ reviewApplicable: undefined, changedFiles: undefined });
     const files = override.files ?? [{ status: "added", filename: firstPath }];
     options.loadReviewScope = () => loadTrustedPullRequestScope({
       githubClient: {
@@ -807,7 +807,7 @@ describe("reviewPullRequest", () => {
 });
 
 describe("trusted pull-request scope", () => {
-  it("derives submission-only applicability from GitHub API file data", async () => {
+  it("derives review applicability from GitHub API file data", async () => {
     const calls = [];
     const scope = await loadTrustedPullRequestScope({
       githubClient: {
@@ -829,10 +829,53 @@ describe("trusted pull-request scope", () => {
 
     expect(calls).toEqual([["pull", 42], ["files", 42]]);
     expect(scope).toEqual({
-      submissionOnly: true,
+      reviewApplicable: true,
       changedFiles: [{ status: "A", path: firstPath }],
       headRepository: "fork-user/leetdash",
     });
+  });
+
+  it("reviews submission solutions in a mixed application pull request", async () => {
+    const files = [
+      { status: "modified", filename: "app/page.tsx" },
+      { status: "added", filename: firstPath },
+    ];
+    const scope = await loadTrustedPullRequestScope({
+      githubClient: {
+        getPullRequest: async (number) => ({
+          number,
+          changed_files: files.length,
+          user: { login: "ada" },
+          base: { sha: "base-sha" },
+          head: { sha: "head-sha", repo: { full_name: "fork-user/leetdash" } },
+        }),
+        listPullRequestFiles: async () => files,
+      },
+      pullNumber: 42,
+      baseSha: "base-sha",
+      headSha: "head-sha",
+      catalog,
+      users,
+    });
+
+    expect(scope).toEqual({
+      reviewApplicable: true,
+      changedFiles: [
+        { status: "M", path: "app/page.tsx" },
+        { status: "A", path: firstPath },
+      ],
+      headRepository: "fork-user/leetdash",
+    });
+
+    const { options, comments } = reviewOptions({
+      ...scope,
+      openCodeClient: { review: async () => passResult() },
+    });
+    const result = await reviewPullRequest(options);
+
+    expect(result.results).toMatchObject([{ path: firstPath, status: "reviewed" }]);
+    expect(comments.some(({ body }) => body.includes(firstPath))).toBe(true);
+    expect(comments.every(({ body }) => !body.includes("app/page.tsx"))).toBe(true);
   });
 
   it.each([
@@ -852,7 +895,7 @@ describe("trusted pull-request scope", () => {
     })).rejects.toMatchObject({ stage: "catalog-resolve", reason: "CATALOG_MAPPING_FAILED" });
   });
 
-  it("classifies ordinary application changes as not applicable without submission validation", async () => {
+  it("classifies ordinary application changes as not applicable", async () => {
     await expect(loadTrustedPullRequestScope({
       githubClient: {
         getPullRequest: async () => ({ number: 42, changed_files: 1, user: { login: "ada" }, base: { sha: "base-sha" }, head: { sha: "head-sha", repo: { full_name: "example/leetdash" } } }),
@@ -864,7 +907,7 @@ describe("trusted pull-request scope", () => {
       catalog,
       users,
     })).resolves.toEqual({
-      submissionOnly: false,
+      reviewApplicable: false,
       changedFiles: [{ status: "M", path: "app/page.tsx" }],
       headRepository: "example/leetdash",
     });
@@ -1148,7 +1191,7 @@ describe("opencode-review CLI", () => {
         OPENCODE_API_KEY: "opencode-secret",
         OPENCODE_REVIEW_MODEL: "opencode-go/deepseek-v4-flash",
       },
-      loadReviewScope: async () => ({ submissionOnly: true, changedFiles: [{ status: "A", path: firstPath }] }),
+      loadReviewScope: async () => ({ reviewApplicable: true, changedFiles: [{ status: "A", path: firstPath }] }),
       githubClient: options.githubClient,
       openCodeClient: { review: async () => failResult(firstPath) },
       catalog,
@@ -1175,7 +1218,7 @@ describe("opencode-review CLI", () => {
         OPENCODE_API_KEY: "opencode-secret",
         OPENCODE_REVIEW_MODEL: "opencode-go/deepseek-v4-flash",
       },
-      loadReviewScope: async () => ({ submissionOnly: true, changedFiles: [{ status: "A", path: firstPath }] }),
+      loadReviewScope: async () => ({ reviewApplicable: true, changedFiles: [{ status: "A", path: firstPath }] }),
       githubClient: options.githubClient,
       openCodeClient: { review: async () => { throw new ReviewFailure({ stage: "model-request", reason: "MODEL_REQUEST_FAILED", detail: "safe" }); } },
       catalog,
@@ -1206,7 +1249,7 @@ describe("opencode-review CLI", () => {
         OPENCODE_RECOVERY_MARKER_PATH: recoveryMarkerPath,
         OPENCODE_REVIEW_MODEL: "opencode-go/deepseek-v4-flash",
       },
-      loadReviewScope: async () => ({ submissionOnly: true, changedFiles: [{ status: "A", path: firstPath }] }),
+      loadReviewScope: async () => ({ reviewApplicable: true, changedFiles: [{ status: "A", path: firstPath }] }),
       githubClient: options.githubClient,
       openCodeClient: { review: async () => {
         attempts += 1;
@@ -1247,7 +1290,7 @@ describe("opencode-review CLI", () => {
         OPENCODE_RECOVERY_MARKER_PATH: recoveryMarkerPath,
         OPENCODE_REVIEW_MODEL: "opencode-go/deepseek-v4-flash",
       },
-      loadReviewScope: async () => ({ submissionOnly: true, changedFiles: [{ status: "A", path: firstPath }] }),
+      loadReviewScope: async () => ({ reviewApplicable: true, changedFiles: [{ status: "A", path: firstPath }] }),
       githubClient: options.githubClient,
       openCodeClient: { review: async () => {
         throw new ReviewFailure({ stage: "model-request", reason: "MODEL_REQUEST_FAILED", detail: "safe", retryable: false });
@@ -1278,7 +1321,7 @@ describe("opencode-review CLI", () => {
         OPENCODE_API_KEY: "opencode-secret",
         OPENCODE_REVIEW_MODEL: "opencode-go/deepseek-v4-flash",
       },
-      loadReviewScope: async () => ({ submissionOnly: true, changedFiles: [{ status: "A", path: firstPath }] }),
+      loadReviewScope: async () => ({ reviewApplicable: true, changedFiles: [{ status: "A", path: firstPath }] }),
       githubClient: options.githubClient,
       openCodeClient: options.openCodeClient,
       catalog,
@@ -1346,7 +1389,7 @@ describe("opencode-review CLI", () => {
         GITHUB_RUN_ID: "9",
         GITHUB_RUN_ATTEMPT: "1",
       },
-      loadReviewScope: async () => ({ submissionOnly: false, changedFiles: [] }),
+      loadReviewScope: async () => ({ reviewApplicable: false, changedFiles: [] }),
       githubClient,
       catalog,
       users,
