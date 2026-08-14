@@ -142,4 +142,35 @@ describe("code viewer and review panel highlight synchronization", () => {
     expect(code.parentElement?.textContent).toContain("Python 3");
     expect(container.querySelector("script")).toBeNull();
   });
+
+  it("highlights inline backtick code with the reviewed solution language", async () => {
+    const reviewWithInlineCode = {
+      ...artifact,
+      text: "L2 uses `return None` safely.",
+      lineReferences: [{ start: 2, end: 2 }],
+      reviews: [{
+        text: "L2 uses `return None` safely.",
+        lineReference: { start: 2, end: 2 },
+      }],
+    };
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      return Promise.resolve(jsonResponse(url.endsWith("/index.json") ? index : reviewWithInlineCode));
+    }));
+
+    const { container } = render(
+      <SolutionReviewPanel
+        pathKey={pathKey}
+        contentKey={contentKey}
+        language="Python 3"
+        onFocusLine={() => undefined}
+      />,
+    );
+
+    const code = await screen.findByTestId("review-inline-code");
+    expect(code.textContent).toBe("return None");
+    expect(code.parentElement?.textContent).toBe("L2 uses return None safely.");
+    expect(code.querySelector('[data-token-kind="keyword"]')?.textContent).toBe("return");
+    expect(container.querySelector("script")).toBeNull();
+  });
 });
