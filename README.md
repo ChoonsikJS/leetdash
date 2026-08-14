@@ -170,6 +170,12 @@ c, cc, cpp, cs, dart, go, java, js, kt, php, py, rb, rs, scala, sql, swift, ts
 npm run catalog:build -- /path/to/source-readme.md
 ```
 
+SWEA 목록만 최신화하려면 다른 공급자 목록을 유지하는 전용 명령을 사용합니다.
+
+```bash
+npm run catalog:build:swea
+```
+
 ## 로컬 개발
 
 ```bash

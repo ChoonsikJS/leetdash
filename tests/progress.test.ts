@@ -116,7 +116,7 @@ describe("dashboard progress helpers", () => {
   it("builds a complete filter index for every provider", async () => {
     await expect(getProviderProblemIndex("leetcode")).resolves.toMatchObject({ items: { length: 4017 } });
     await expect(getProviderProblemIndex("programmers")).resolves.toMatchObject({ items: { length: 689 } });
-    await expect(getProviderProblemIndex("swea")).resolves.toMatchObject({ items: { length: 1124 } });
+    await expect(getProviderProblemIndex("swea")).resolves.toMatchObject({ items: { length: 1160 } });
     await expect(getProviderProblemIndex("unknown")).resolves.toBeNull();
   });
 
