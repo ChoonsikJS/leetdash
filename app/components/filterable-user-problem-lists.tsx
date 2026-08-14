@@ -84,6 +84,7 @@ const difficultyOptionsByProvider: Record<CatalogProvider, { value: string; labe
     { value: "D6", label: "D6" },
     { value: "D7", label: "D7" },
     { value: "D8", label: "D8" },
+    { value: "Unknown", label: "미분류" },
   ],
   programmers: [
     { value: "all", label: "전체" },
