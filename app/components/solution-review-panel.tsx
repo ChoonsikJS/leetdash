@@ -49,6 +49,43 @@ export type ReviewMarkdownBlock =
   | { kind: "prose"; text: string }
   | { kind: "code"; text: string };
 
+export type ReviewMarkdownInline =
+  | { kind: "text"; text: string }
+  | { kind: "code"; text: string };
+
+/**
+ * Splits prose around matching Markdown backtick delimiters. The returned
+ * values are still rendered as text nodes, so inline highlighting does not
+ * expand the review artifact's trust boundary.
+ */
+export function parseReviewInlineCode(text: string): ReviewMarkdownInline[] {
+  const parts: ReviewMarkdownInline[] = [];
+  let cursor = 0;
+
+  while (cursor < text.length) {
+    const openingStart = text.indexOf("`", cursor);
+    if (openingStart === -1) break;
+
+    let openingEnd = openingStart + 1;
+    while (text[openingEnd] === "`") openingEnd += 1;
+    const delimiter = text.slice(openingStart, openingEnd);
+    const closingStart = text.indexOf(delimiter, openingEnd);
+    if (closingStart === -1) break;
+
+    if (openingStart > cursor) {
+      parts.push({ kind: "text", text: text.slice(cursor, openingStart) });
+    }
+    parts.push({ kind: "code", text: text.slice(openingEnd, closingStart) });
+    cursor = closingStart + delimiter.length;
+  }
+
+  if (cursor < text.length) {
+    parts.push({ kind: "text", text: text.slice(cursor) });
+  }
+
+  return parts.length > 0 ? parts : [{ kind: "text", text }];
+}
+
 /**
  * Splits the safe review text into prose and fenced code without turning any
  * Markdown into HTML. Keeping the renderer text-node-only preserves the
@@ -318,7 +355,27 @@ function ReviewMarkdown({
         if (block.kind === "prose") {
           return (
             <p key={blockIndex} className={styles.text}>
-              {block.text}
+              {parseReviewInlineCode(block.text).map((part, partIndex) => {
+                if (part.kind === "text") return part.text;
+
+                return (
+                  <code
+                    key={partIndex}
+                    className={styles.inlineCode}
+                    data-testid="review-inline-code"
+                  >
+                    {tokenizeCodeLine(part.text, language ?? "").map((token, tokenIndex) => (
+                      <span
+                        key={tokenIndex}
+                        className={syntaxStyles[`token-${token.kind}`]}
+                        data-token-kind={token.kind}
+                      >
+                        {token.text}
+                      </span>
+                    ))}
+                  </code>
+                );
+              })}
             </p>
           );
         }

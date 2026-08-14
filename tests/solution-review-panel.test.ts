@@ -1,5 +1,11 @@
 import { describe, afterEach, expect, it, vi } from "vitest";
-import { mapReviewToView, lineLabel, parseReviewMarkdown, type ReviewPanelView } from "@/app/components/solution-review-panel";
+import {
+  mapReviewToView,
+  lineLabel,
+  parseReviewInlineCode,
+  parseReviewMarkdown,
+  type ReviewPanelView,
+} from "@/app/components/solution-review-panel";
 import { findReviewIndexForLine } from "@/app/components/solution-code-viewer-helpers";
 import { loadReview, assertHex64, type ReviewLoadResult, type ReviewArtifact, type Hex64, isAbortError } from "@/lib/solution-assets";
 
@@ -212,9 +218,25 @@ describe("parseReviewMarkdown", () => {
     ]);
   });
 
-  it("leaves inline backticks and HTML-looking text as safe prose", () => {
+  it("leaves inline backticks and HTML-looking text in a safe prose block", () => {
     expect(parseReviewMarkdown("`value` <script>alert(1)</script>")).toEqual([
       { kind: "prose", text: "`value` <script>alert(1)</script>" },
+    ]);
+  });
+});
+
+describe("parseReviewInlineCode", () => {
+  it("separates backtick code from surrounding review prose", () => {
+    expect(parseReviewInlineCode("Use `return None` here.")).toEqual([
+      { kind: "text", text: "Use " },
+      { kind: "code", text: "return None" },
+      { kind: "text", text: " here." },
+    ]);
+  });
+
+  it("keeps unmatched backticks as plain text", () => {
+    expect(parseReviewInlineCode("Use `return None here.")).toEqual([
+      { kind: "text", text: "Use `return None here." },
     ]);
   });
 });
