@@ -23,6 +23,51 @@
   white-space: pre-wrap;
 }
 
+.inlineCode {
+  background: color-mix(in srgb, var(--surface-muted) 78%, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.88em;
+  padding: 0.08em 0.3em;
+  white-space: break-spaces;
+}
+
+.markdown > :last-child {
+  margin-bottom: 10px;
+}
+
+.codeBlock {
+  background: color-mix(in srgb, var(--surface-muted) 70%, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  margin: 0 0 10px 0;
+  overflow: hidden;
+}
+
+.codeLanguage {
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.codeScroller {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+  overflow-x: auto;
+  padding: 10px 12px;
+}
+
+.codeLine {
+  display: block;
+  min-height: 1.6em;
+  white-space: pre;
+}
+
 .reviewList {
   display: grid;
   gap: 10px;

@@ -81,8 +81,9 @@ describe("review prompt", () => {
     expect(prompt).toContain("코드 식별자, 경로, 언어 키워드, API 이름, Big-O 표기는 정확성을 위해 원문을 유지할 수 있습니다.");
     expect(prompt).toContain("L{줄번호} `{해당 코드 조각}` [분류: 정확성/효율성/스타일/제약사항] 코멘트 내용");
     expect(prompt).toContain("분류 값은 정확성, 효율성, 스타일, 제약사항 중 하나만 사용하세요.");
-    expect(prompt).toContain("언어별 마크다운 코드 펜스(```{language})를 사용해");
-    expect(prompt).toContain("L{시작}-{끝} 형식으로 범위를 표시");
+    expect(prompt).toContain("각 코멘트는 물리적으로 한 줄로 작성하고 코드 펜스를 사용하지 마세요.");
+    expect(prompt).toContain("L{시작}-L{끝} 형식으로 범위를 표시");
+    expect(prompt).not.toContain("언어별 마크다운 코드 펜스");
     expect(prompt).toContain("파일 전체에 대한 총평, 요약, 섹션 제목은 작성하지 마세요.");
     expect(prompt).toContain("코멘트 개수를 억지로 채우지 마세요.");
     expect(prompt).toContain("리뷰 코멘트 없음.");
@@ -99,6 +100,12 @@ describe("review prompt", () => {
     expect(prompt).toContain("시간복잡도와 공간복잡도를 코드대로 추론하세요.");
     expect(prompt).toContain("입력이 매우 클 경우");
     expect(prompt).toContain("코드와 확인된 제약사항에 근거하지 않은 방어적 경고를 작성하지 마세요.");
+    expect(prompt).toContain("FEW-SHOT EXAMPLES");
+    expect(prompt).toContain("예시의 코드 패턴이나 제약사항을 실제 제출에 적용하거나 실제 제출에 대한 사실로 취급하지 마세요.");
+    expect(prompt).toContain("L1 `int last = values[values.length];` [분류: 정확성]");
+    expect(prompt).toContain("// N <= 100,000; each value is between 0 and 1,000,000,000");
+    expect(prompt).toContain("EXAMPLE 2 OUTPUT\n리뷰 코멘트 없음.");
+    expect(prompt.indexOf("FEW-SHOT EXAMPLES")).toBeLessThan(prompt.indexOf("\nSUBMISSION\n"));
     expect(prompt).not.toContain("#### 요약");
     expect(prompt).not.toContain("#### 잠재적 위험");
     expect(prompt).not.toContain("#### 복잡도");
