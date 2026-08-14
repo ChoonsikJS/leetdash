@@ -9,7 +9,7 @@ function readWorkflow() {
 }
 
 describe("trusted OpenCode review workflow", () => {
-  it("runs from workflow_run only for completed Deploy Pages pull-request runs", () => {
+  it("runs from workflow_run for completed Deploy Pages pull-request runs", () => {
     expect(existsSync(workflowPath)).toBe(true);
     const workflow = readWorkflow();
 
@@ -18,9 +18,20 @@ describe("trusted OpenCode review workflow", () => {
     expect(workflow).toContain("run-name: opencode-review:${{ github.event.workflow_run.head_sha }}");
     expect(workflow).toContain("types:\n      - completed");
     expect(workflow).toContain("github.event.workflow_run.event == 'pull_request'");
-    expect(workflow).toContain("github.event.workflow_run.conclusion == 'success'");
+    expect(workflow).toContain("if: github.event.workflow_run.conclusion == 'success'");
     expect(workflow).not.toContain("workflow_run.pull_requests[0]");
     expect(workflow).not.toContain("pull_request_target:");
+  });
+
+  it("reports submission validation failures from trusted code", () => {
+    const workflow = readWorkflow();
+
+    expect(workflow).toContain("name: Sync submission validation result");
+    expect(workflow).toContain("node scripts/report-submission-validation.mjs \\");
+    expect(workflow).toContain('--base "${{ steps.resolve-pr.outputs.base-sha }}"');
+    expect(workflow).toContain('--head "${{ steps.resolve-pr.outputs.head-sha }}"');
+    expect(workflow).toContain('--pull-number "${{ steps.resolve-pr.outputs.pull-number }}"');
+    expect(workflow).toContain("pull-requests: write");
   });
 
   it("resolves a fork PR from trusted default-branch code before checking out its base", () => {
@@ -42,6 +53,7 @@ describe("trusted OpenCode review workflow", () => {
     expect(workflow).toContain('--head "${{ steps.resolve-pr.outputs.head-sha }}"');
     expect(workflow).toContain('--pull-number "${{ steps.resolve-pr.outputs.pull-number }}"');
     expect(workflow).not.toContain("--submission-only");
+    expect(workflow).toContain("if: steps.opencode-review.outcome == 'failure'");
   });
 
   it("grants only the permissions and secrets needed by trusted review code", () => {
