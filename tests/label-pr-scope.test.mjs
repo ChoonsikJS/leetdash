@@ -11,10 +11,10 @@ import {
 
 const submissionPath = "submissions/ada/top-interview-easy/1/Solution.java";
 
-function response(body, status = 200) {
+function response(body, status = 200, headers = {}) {
   return new Response(status === 204 ? null : JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...headers },
   });
 }
 
@@ -149,7 +149,7 @@ describe("GitHub label client", () => {
       client,
       pullNumber: 42,
       expectedFileCount: 2,
-    })).rejects.toThrow(failureMessage);
+    })).rejects.toThrow("GitHub API returned 1 pull request files; expected 2.");
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
@@ -193,14 +193,49 @@ describe("GitHub label client", () => {
 describe("label synchronization CLI", () => {
   it("reports a sanitized failure without exposing token or provider response", async () => {
     const stderr = vi.fn();
-    const fetchImpl = vi.fn(async () => response({ message: "provider-secret-body" }, 500));
+    const fetchImpl = vi.fn(async () => response(
+      { message: "provider-secret-body" },
+      500,
+      { "x-github-request-id": "ABCD:1234:EFGH:5678" },
+    ));
 
     const result = await main({ env: validEnv(), fetchImpl, stderr });
 
     expect(result).toEqual({ exitCode: 1 });
-    expect(stderr).toHaveBeenCalledWith(failureMessage);
+    expect(stderr).toHaveBeenCalledWith(
+      `${failureMessage} GitHub API GET /pulls/42/files?per_page=100&page=1 returned an error; status=500; request-id=ABCD:1234:EFGH:5678.`,
+    );
     expect(JSON.stringify(stderr.mock.calls)).not.toContain("github-secret-token");
     expect(JSON.stringify(stderr.mock.calls)).not.toContain("provider-secret-body");
+  });
+
+  it("reports the request stage for transport failures without exposing provider errors", async () => {
+    const stderr = vi.fn();
+    const fetchImpl = vi.fn(async () => {
+      throw new Error("transport-provider-secret");
+    });
+
+    const result = await main({ env: validEnv(), fetchImpl, stderr });
+
+    expect(result).toEqual({ exitCode: 1 });
+    expect(stderr).toHaveBeenCalledWith(
+      `${failureMessage} GitHub API GET /pulls/42/files?per_page=100&page=1 failed before receiving a response; status=unavailable; request-id=unavailable.`,
+    );
+    expect(JSON.stringify(stderr.mock.calls)).not.toContain("transport-provider-secret");
+  });
+
+  it("rejects untrusted request IDs before writing diagnostics", async () => {
+    const stderr = vi.fn();
+    const fetchImpl = vi.fn(async () => response(
+      { message: "denied" },
+      403,
+      { "x-github-request-id": "unsafe/request-id" },
+    ));
+
+    await main({ env: validEnv(), fetchImpl, stderr });
+
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("request-id=unavailable"));
+    expect(JSON.stringify(stderr.mock.calls)).not.toContain("unsafe/request-id");
   });
 
   it("rejects malformed configuration before constructing a client", async () => {
