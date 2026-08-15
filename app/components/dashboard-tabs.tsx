@@ -20,7 +20,11 @@ export function DashboardTabs({ tabs }: { tabs: DashboardTabItem[] }) {
 
   return (
     <section className="dashboard-tabs" aria-label="대시보드 데이터">
-      <div className="dashboard-tab-list" role="tablist" aria-label="대시보드 내부 탭">
+      <div
+        className={`dashboard-tab-list dashboard-tab-list-${Math.min(tabs.length, 4)}`}
+        role="tablist"
+        aria-label="대시보드 내부 탭"
+      >
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab.id;
           const tabId = `${generatedId}-${tab.id}-tab`;

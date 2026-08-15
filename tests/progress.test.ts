@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildRecentSolvedSubmissions,
+  buildUserDifficultyAnalysis,
   buildUserHistory,
   getCommunitySolutionCounts,
   getDashboardData,
@@ -24,6 +25,44 @@ function submission(overrides: Partial<Submission>): Submission {
 }
 
 describe("dashboard progress helpers", () => {
+  it("groups unique solved problems by provider and difficulty", () => {
+    const user: ProgressUser = {
+      id: "ada",
+      displayName: "Ada Lovelace",
+      githubUsername: "ada",
+      active: true,
+      submissionsPath: "submissions/ada",
+      submissions: [
+        submission({ id: "ada:lc1:first", problemKey: "leetcode:1" }),
+        submission({ id: "ada:lc1:duplicate", problemKey: "leetcode:1" }),
+        submission({ problemKey: "leetcode:2", status: SubmissionStatus.REVIEWING }),
+        submission({ problemKey: "leetcode:4", status: SubmissionStatus.SKIPPED }),
+        submission({ problemKey: "programmers:12906" }),
+        submission({ problemKey: "swea:1206" }),
+      ],
+      activity: [],
+    };
+
+    const analysis = buildUserDifficultyAnalysis(user);
+    const leetcode = analysis.find((provider) => provider.provider === "leetcode");
+    const programmers = analysis.find((provider) => provider.provider === "programmers");
+    const swea = analysis.find((provider) => provider.provider === "swea");
+
+    expect(analysis.map((provider) => provider.provider)).toEqual(["leetcode", "programmers", "swea"]);
+    expect(leetcode).toMatchObject({
+      solvedTotal: 1,
+      difficulties: [
+        { difficulty: "easy", label: "쉬움", solved: 1 },
+        { difficulty: "medium", label: "보통", solved: 0 },
+        { difficulty: "hard", label: "어려움", solved: 0 },
+      ],
+    });
+    expect(programmers?.solvedTotal).toBe(1);
+    expect(programmers?.difficulties.find((difficulty) => difficulty.difficulty === "level-1")?.solved).toBe(1);
+    expect(swea?.solvedTotal).toBe(1);
+    expect(swea?.difficulties.find((difficulty) => difficulty.difficulty === "D3")?.solved).toBe(1);
+  });
+
   it("includes catalog difficulty in each user history item", () => {
     const user: ProgressUser = {
       id: "ada",
@@ -131,6 +170,18 @@ describe("dashboard progress helpers", () => {
       listKey: expected?.listKey,
       problemKey: expected?.problemKey,
     });
+  });
+
+  it("includes provider difficulty analysis in user detail", async () => {
+    const detail = await getUserDetail("mygo");
+
+    expect(detail?.difficultyAnalysis).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ provider: "leetcode", difficulties: expect.any(Array) }),
+        expect.objectContaining({ provider: "programmers", solvedTotal: 0 }),
+        expect.objectContaining({ provider: "swea", solvedTotal: 0 }),
+      ]),
+    );
   });
 
   it("builds a complete filter index for every provider", async () => {
