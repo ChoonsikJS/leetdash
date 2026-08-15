@@ -61,6 +61,7 @@ export type UserHistoryItem = {
   problemTitle: string;
   problemProvider: string;
   problemId: string;
+  difficulty: string;
   sourceKey: string;
   listTitle: string;
   status: SubmissionStatus;
@@ -207,6 +208,7 @@ export function buildUserHistory(user: ProgressData["users"][number]): UserHisto
         problemTitle: problem.title,
         problemProvider: problem.provider,
         problemId: problem.problemId,
+        difficulty: problem.difficulty,
         sourceKey: submission.sourceKey,
         listTitle: list.title,
         status: submission.status,

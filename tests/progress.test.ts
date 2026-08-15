@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildRecentSolvedSubmissions,
+  buildUserHistory,
   getCommunitySolutionCounts,
   getDashboardData,
   getProviderProblemIndex,
@@ -23,6 +24,25 @@ function submission(overrides: Partial<Submission>): Submission {
 }
 
 describe("dashboard progress helpers", () => {
+  it("includes catalog difficulty in each user history item", () => {
+    const user: ProgressUser = {
+      id: "ada",
+      displayName: "Ada Lovelace",
+      githubUsername: "ada",
+      active: true,
+      submissionsPath: "submissions/ada",
+      submissions: [submission({ problemKey: "leetcode:1" })],
+      activity: [],
+    };
+
+    expect(buildUserHistory(user)).toEqual([
+      expect.objectContaining({
+        problemKey: "leetcode:1",
+        difficulty: "easy",
+      }),
+    ]);
+  });
+
   it("returns ten recent solved submissions by default", () => {
     const problemKeys = [
       "leetcode:26",
