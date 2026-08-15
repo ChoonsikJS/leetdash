@@ -57,6 +57,7 @@ const difficultyOptions: Record<CatalogProvider, { value: string; label: string 
   ],
   swea: Array.from({ length: 8 }, (_, index) => ({ value: `D${index + 1}`, label: `D${index + 1}` })).concat([
     { value: "all", label: "전체" },
+    { value: "Unknown", label: "미분류" },
   ]).sort((a, b) => (a.value === "all" ? -1 : b.value === "all" ? 1 : a.value.localeCompare(b.value))),
 };
 

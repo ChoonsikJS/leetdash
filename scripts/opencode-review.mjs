@@ -20,9 +20,8 @@ import {
 import { GitHubReviewClient, OpenCodeClient } from "./opencode-review-clients.mjs";
 import {
   hasCompletePullRequestFileList,
-  isParticipantSubmissionPath,
+  inspectSubmissionChanges,
   isSubmissionArtifactName,
-  validateSubmissionFiles,
 } from "./validate-submission-pr.mjs";
 
 const solutionName = /^solution\.[^.\/]+$/i;
@@ -138,18 +137,15 @@ async function loadTrustedPullRequestScope({
   }
   if (!hasCompletePullRequestFileList(pullRequest, files)) throw changedFilesLoadFailure();
   const changedFiles = files.map(normalizePullRequestFile);
-  const submissionOnly = changedFiles.length > 0
-    && changedFiles.every((file) => isParticipantSubmissionPath(file.path));
-  if (submissionOnly) {
-    const errors = validateSubmissionFiles(changedFiles, {
-      authorLogin: pullRequest.user.login,
-      catalogInput: catalog,
-      checkFileExists: false,
-      usersInput: users,
-    });
-    if (errors.length > 0) throw changedFilesLoadFailure();
-  }
-  return { submissionOnly, changedFiles, headRepository: pullRequest.head.repo.full_name };
+  const inspection = inspectSubmissionChanges(changedFiles, {
+    authorLogin: pullRequest.user.login,
+    catalogInput: catalog,
+    checkFileExists: false,
+    usersInput: users,
+  });
+  if (inspection.errors.length > 0) throw changedFilesLoadFailure();
+  const reviewApplicable = inspection.submissionFiles.length > 0;
+  return { reviewApplicable, changedFiles, headRepository: pullRequest.head.repo.full_name };
 }
 
 async function defaultSourceReader(filePath, {
@@ -312,7 +308,7 @@ async function reviewPullRequest({
   serverUrl,
   headRepository,
   summaryPath,
-  submissionOnly,
+  reviewApplicable,
 }) {
   const check = await githubClient.createCheck({
     headSha,
@@ -324,9 +320,9 @@ async function reviewPullRequest({
   let failure;
   let markdown;
   let conclusion = "success";
-  let activeSubmissionOnly = false;
+  let activeReviewApplicable = false;
   let activeHeadRepository = headRepository;
-  let trustedScopeValidated = typeof submissionOnly === "boolean";
+  let trustedScopeValidated = typeof reviewApplicable === "boolean";
   let managedComments = [];
   let managedCommentsLoaded = false;
   let commentDiscoveryAvailable = true;
@@ -345,8 +341,8 @@ async function reviewPullRequest({
 
   try {
     let activeChangedFiles = changedFiles;
-    if (typeof submissionOnly === "boolean") {
-      activeSubmissionOnly = submissionOnly;
+    if (typeof reviewApplicable === "boolean") {
+      activeReviewApplicable = reviewApplicable;
     } else {
       if (typeof loadReviewScope !== "function") throw changedFilesLoadFailure();
       let scope;
@@ -356,16 +352,16 @@ async function reviewPullRequest({
         if (error instanceof ReviewFailure) throw error;
         throw changedFilesLoadFailure();
       }
-      if (!scope || typeof scope.submissionOnly !== "boolean" || !Array.isArray(scope.changedFiles)) {
+      if (!scope || typeof scope.reviewApplicable !== "boolean" || !Array.isArray(scope.changedFiles)) {
         throw changedFilesLoadFailure();
       }
       trustedScopeValidated = true;
-      activeSubmissionOnly = scope.submissionOnly;
+      activeReviewApplicable = scope.reviewApplicable;
       activeChangedFiles = scope.changedFiles;
       if (typeof scope.headRepository === "string") activeHeadRepository = scope.headRepository;
     }
 
-    if (!activeSubmissionOnly) {
+    if (!activeReviewApplicable) {
       markdown = notApplicableMarkdown();
     } else {
       if (!apiKey || !model) throw reviewConfigurationFailure();

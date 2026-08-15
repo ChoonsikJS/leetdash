@@ -77,6 +77,24 @@
 			"displayName": "이정환",
 			"githubUsername": "ijeonghwan",
 			"active": true
+		},
+		{
+			"id": "daamont",
+			"displayName": "박수민",
+			"githubUsername": "daamont",
+			"active": true
+		},
+		{
+			"id": "leegy21",
+			"displayName": "이가영",
+			"githubUsername": "leegy21",
+			"active": true
+		},
+		{
+			"id": "anfdml",
+			"displayName": "김준성",
+			"githubUsername": "anfdml",
+			"active": true
 		}
     ]
 }

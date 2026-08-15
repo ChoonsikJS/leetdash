@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -123,6 +123,36 @@ describe("validate-submission-pr", () => {
     expect(result.githubOutput).toBe("submission_only=false\n");
   });
 
+  it("validates submission files in a mixed application pull request", async () => {
+    const repo = await createRepoFixture();
+
+    const result = await runValidatorForAuthor(
+      repo,
+      "ada",
+      "M\tapp/page.tsx\nM\tsubmissions/ada/top-interview-easy/1/Solution.java\n",
+    );
+
+    expect(result.stdout).toContain("submission_only=false; validated 1 changed submission file(s)");
+    expect(result.githubOutput).toBe("submission_only=false\n");
+  });
+
+  it("rejects an invalid submission filename in a mixed application pull request", async () => {
+    const repo = await createRepoFixture();
+    await writeFile(
+      path.join(repo, "submissions", "ada", "top-interview-easy", "1", "answer.java"),
+      "class Solution {}\n",
+    );
+
+    await expect(runValidatorForAuthor(
+      repo,
+      "ada",
+      "M\tapp/page.tsx\nA\tsubmissions/ada/top-interview-easy/1/answer.java\n",
+    )).rejects.toMatchObject({
+      stderr: expect.stringContaining("file must be solution.<supported ext>, README.md, or meta.json"),
+      githubOutput: "submission_only=false\n",
+    });
+  });
+
   it("rejects submission-only changes for an unknown provider list", async () => {
     const repo = await createRepoFixture();
     await mkdir(path.join(repo, "submissions", "ada", "unknown", "1"), { recursive: true });
@@ -134,13 +164,18 @@ describe("validate-submission-pr", () => {
     });
   });
 
-  it("rejects deletions in the fast submission-only path", async () => {
+  it("accepts replacing one catalog submission with another under the author path", async () => {
     const repo = await createRepoFixture();
+    await unlink(path.join(repo, "submissions", "ada", "programmers", "12906", "solution.java"));
 
-    await expect(runValidator(repo, "D\tsubmissions/ada/top-interview-easy/1/Solution.java\n")).rejects.toMatchObject({
-      stderr: expect.stringContaining("may add, update, or rename files, not delete them"),
-      githubOutput: "submission_only=true\n",
-    });
+    const result = await runValidatorForAuthor(
+      repo,
+      "ada",
+      "D\tsubmissions/ada/programmers/12906/solution.java\nA\tsubmissions/ada/swea/1206/solution.py\n",
+    );
+
+    expect(result.stdout).toContain("validated 2 changed submission file(s)");
+    expect(result.githubOutput).toBe("submission_only=true\n");
   });
 
   it("accepts submission-only changes under the pull request author path", async () => {

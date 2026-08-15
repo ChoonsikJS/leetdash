@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getProblemComparisonHref, getUserProfileHref } from "@/lib/routes";
+import {
+  getProblemComparisonHref,
+  getProblemSearchDataUrl,
+  getProblemSearchHref,
+  getUserProfileHref,
+} from "@/lib/routes";
 
 describe("user profile routes", () => {
   it("builds a root-relative profile URL for local hosting", () => {
@@ -46,5 +51,16 @@ describe("problem comparison routes", () => {
     expect(getProblemComparisonHref("leet/co", "1 2", "user/name", "/leetdash")).toBe(
       "/leetdash/problems/leet%2Fco/1%202/?user=user%2Fname",
     );
+  });
+});
+
+describe("problem search routes", () => {
+  it("builds the static search page and encodes its query", () => {
+    expect(getProblemSearchHref("two sum", "")).toBe("/search/?q=two%20sum");
+  });
+
+  it("keeps the deployment base path for the form action and data URL", () => {
+    expect(getProblemSearchHref(undefined, "/leetdash/")).toBe("/leetdash/search/");
+    expect(getProblemSearchDataUrl("/leetdash/")).toBe("/leetdash/problem-search/data.json");
   });
 });

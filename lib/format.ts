@@ -75,6 +75,7 @@ export function difficultyLabel(value: string) {
     easy: "쉬움",
     medium: "보통",
     hard: "어려움",
+    unknown: "미분류",
   };
 
   return labels[value.toLowerCase()] ?? value;

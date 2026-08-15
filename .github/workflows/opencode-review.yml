@@ -16,9 +16,7 @@ concurrency:
 jobs:
   review:
     timeout-minutes: 90
-    if: >-
-      github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -50,7 +48,18 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Sync submission validation result
+        run: |
+          node scripts/report-submission-validation.mjs \
+            --base "${{ steps.resolve-pr.outputs.base-sha }}" \
+            --head "${{ steps.resolve-pr.outputs.head-sha }}" \
+            --pull-number "${{ steps.resolve-pr.outputs.pull-number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run trusted OpenCode review
+        id: opencode-review
+        if: github.event.workflow_run.conclusion == 'success'
         run: |
           node scripts/opencode-review.mjs \
             --base "${{ steps.resolve-pr.outputs.base-sha }}" \
@@ -63,7 +72,7 @@ jobs:
           OPENCODE_REVIEW_MODEL: ${{ vars.OPENCODE_REVIEW_MODEL }}
 
       - name: Publish retryable failure marker
-        if: failure()
+        if: steps.opencode-review.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: opencode-review-retryable-${{ github.run_attempt }}-${{ steps.resolve-pr.outputs.pull-number }}-${{ steps.resolve-pr.outputs.head-sha }}
