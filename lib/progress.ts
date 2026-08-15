@@ -1,6 +1,16 @@
 import { buildActivityCalendar, getSeoulDateKey, type ActivityCalendarWindow } from "@/lib/activity";
-import { catalog, catalogLists, getList, getListProblems, getProblem, providerLists, type CatalogList } from "@/lib/catalog";
+import {
+  catalog,
+  catalogLists,
+  getList,
+  getListProblems,
+  getProblem,
+  providerLists,
+  type CatalogList,
+  type CatalogProvider,
+} from "@/lib/catalog";
 import progressData from "@/data/progress.json";
+import { difficultyLabel } from "@/lib/format";
 import { FIRST_UNSOLVED_PROBLEM_ELEMENT_ID } from "@/lib/user-problem-focus";
 import { getSelectedSubmission } from "@/lib/submission-selection";
 import {
@@ -77,9 +87,29 @@ export type FirstUnsolvedProblemTarget = {
   problemKey: string;
 };
 
+export type DifficultyAnalysisBucket = {
+  difficulty: string;
+  label: string;
+  solved: number;
+};
+
+export type ProviderDifficultyAnalysis = {
+  provider: CatalogProvider;
+  title: string;
+  solvedTotal: number;
+  difficulties: DifficultyAnalysisBucket[];
+};
+
 type RecentSubmissionUser = Pick<User, "id" | "displayName" | "githubUsername"> & {
   submissions: Submission[];
 };
+
+const difficultyOrderByProvider: Record<CatalogProvider, readonly string[]> = {
+  leetcode: ["easy", "medium", "hard"],
+  programmers: ["level-0", "level-1", "level-2", "level-3", "level-4", "level-5"],
+  swea: ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "Unknown"],
+};
+const difficultyAnalysisProviderOrder: readonly CatalogProvider[] = ["leetcode", "programmers", "swea"];
 
 function getDateKeyTime(dateKey: string) {
   const [year, month, day] = dateKey.split("-").map(Number);
@@ -226,6 +256,54 @@ export function buildUserHistory(user: ProgressData["users"][number]): UserHisto
         left.problemTitle.localeCompare(right.problemTitle)
       );
     });
+}
+
+export function buildUserDifficultyAnalysis(
+  user: ProgressData["users"][number],
+): ProviderDifficultyAnalysis[] {
+  const countsByProvider = new Map<CatalogProvider, Map<string, number>>(
+    difficultyAnalysisProviderOrder.map((provider) => [provider, new Map<string, number>()]),
+  );
+  const problemKeys = new Set(user.submissions.map((submission) => submission.problemKey));
+
+  for (const problemKey of problemKeys) {
+    const submission = getSelectedSubmission(user, problemKey);
+    if (submission?.status !== SubmissionStatus.SOLVED) {
+      continue;
+    }
+
+    const problem = getProblem(problemKey);
+    const counts = countsByProvider.get(problem.provider);
+    if (counts) {
+      counts.set(problem.difficulty, (counts.get(problem.difficulty) ?? 0) + 1);
+    }
+  }
+
+  return difficultyAnalysisProviderOrder.map((provider) => {
+    const list = getList(provider);
+    const configuredDifficulties = difficultyOrderByProvider[provider];
+    const configuredSet = new Set(configuredDifficulties);
+    const additionalDifficulties = [
+      ...new Set(
+        catalog.problems
+          .filter((problem) => problem.provider === provider && !configuredSet.has(problem.difficulty))
+          .map((problem) => problem.difficulty),
+      ),
+    ].sort((left, right) => left.localeCompare(right));
+    const counts = countsByProvider.get(provider) ?? new Map<string, number>();
+    const difficulties = [...configuredDifficulties, ...additionalDifficulties].map((difficulty) => ({
+      difficulty,
+      label: difficultyLabel(difficulty),
+      solved: counts.get(difficulty) ?? 0,
+    }));
+
+    return {
+      provider,
+      title: list.title,
+      solvedTotal: difficulties.reduce((sum, difficulty) => sum + difficulty.solved, 0),
+      difficulties,
+    };
+  });
 }
 
 function buildUserRow(
@@ -391,6 +469,7 @@ export async function getUserDetail(userId: string) {
     user,
     lists,
     providers,
+    difficultyAnalysis: buildUserDifficultyAnalysis(user),
     history: buildUserHistory(user),
     activityCalendar: buildActivityCalendar(user.activity ?? [], 90),
     firstUnsolvedProblemTarget,
