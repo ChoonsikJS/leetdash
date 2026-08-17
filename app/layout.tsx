@@ -46,6 +46,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </nav>
         </header>
         <main>{children}</main>
+        <footer className="shell-footer">
+          <span>Leetdash</span>
+          <Link href="/privacy">개인정보처리방침</Link>
+        </footer>
       </body>
     </html>
   );
