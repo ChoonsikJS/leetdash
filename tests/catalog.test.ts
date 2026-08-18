@@ -16,7 +16,7 @@ describe("problem catalog", () => {
       ["programmers", 689],
       ["swea", 1160],
       ["programmers-high-score-kit", 47],
-      ["leetcode", 4017],
+      ["leetcode", 4029],
     ]);
   });
 
