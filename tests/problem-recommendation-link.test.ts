@@ -14,11 +14,10 @@ function expectGroundedRecommendationContract(prompt: string) {
   expect(prompt).toContain("확인할 수 없는 값은 임의로 채우지 말고 정확히 unspecified");
   expect(prompt).toContain("LeetCode와 Programmers에서 서로 독립적으로 3개씩");
   expect(prompt).toContain("다른 플랫폼이나 부적합한 문제로 채우지 않는다");
-  expect(prompt).toContain("6주, 주 5회 세션");
-  expect(prompt).toContain("관측 근거");
-  expect(prompt).toContain("신뢰도");
+  expect(prompt).toContain("우선순위");
+  expect(prompt).toContain("지금 바로 풀 문제");
   expect(prompt).toContain("추천 이유");
-  expect(prompt).toContain("다음 행동");
+  expect(prompt).toContain("첫 3회 세션");
 }
 
 describe("problem recommendation link", () => {
@@ -28,24 +27,28 @@ describe("problem recommendation link", () => {
     );
   });
 
-  it("defines a grounded study analysis and curriculum", () => {
+  it("prioritizes grounded problems for the user's current situation", () => {
     const prompt = buildProblemRecommendationPrompt("submissions/ada");
 
     expect(prompt).toContain(getUserSubmissionRoute("submissions/ada"));
     expect(prompt).toContain("data/problem-catalog.json");
     expect(prompt).toContain("같은 problemKey의 중복 제출은 하나로 합치고");
     expect(prompt).toContain("이미 푼 문제는 신규 추천에서 제외");
-    expect(prompt).toContain("숙련도 부족으로 단정하지 않는다");
-    expect(prompt).toContain("6주 커리큘럼");
+    expect(prompt).toContain("적은 풀이 수를 실력 부족으로 단정하지 않는다");
+    expect(prompt).toContain("최근 풀이 유형");
+    expect(prompt).toContain("아직 다루지 않은 핵심 유형");
+    expect(prompt).toContain("6주 커리큘럼은 작성하지 않는다");
+    expect(prompt).toContain("지금 풀 문제 요약");
     expectGroundedRecommendationContract(prompt);
   });
 
-  it("uses an evidence-aware beginner plan when there are no submissions", () => {
+  it("recommends starter problems instead of a long curriculum when there are no submissions", () => {
     const prompt = buildProblemRecommendationPrompt("submissions/new-user", false);
 
     expect(prompt).not.toContain(getUserSubmissionRoute("submissions/new-user"));
-    expect(prompt).toContain("아직 제출 이력이 없는 입문자");
+    expect(prompt).toContain("아직 제출 이력이 없는 입문자에게 지금 풀 문제");
     expect(prompt).toContain("실력과 취약점을 추측하지 않는다");
+    expect(prompt).toContain("장기 커리큘럼을 만들지 않는다");
     expect(prompt).toContain("정답 코드는 제공하지 않는다");
     expectGroundedRecommendationContract(prompt);
   });
