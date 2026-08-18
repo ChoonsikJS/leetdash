@@ -12,7 +12,7 @@ describe("inactive reminder workflow", () => {
   });
 
   it("has only the permissions needed to read activity and comment", () => {
-    expect(workflow).toContain("permissions:\n  contents: read\n  issues: write");
+    expect(workflow).toContain("permissions:\n  contents: read\n  issues: write\n  pull-requests: read");
     expect(workflow).not.toContain("contents: write");
   });
 

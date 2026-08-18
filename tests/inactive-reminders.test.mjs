@@ -72,6 +72,22 @@ describe("inactive reminder target selection", () => {
     });
     expect(targets).toEqual([expect.objectContaining({ id: "ada", daysInactive: 3 })]);
   });
+
+  it("treats a solution waiting in an open pull request as recent activity", () => {
+    const targets = selectReminderTargets({
+      today: new Date("2026-08-18T00:28:00.000Z"),
+      usersInput: usersInput([{ id: "mygo", active: true }]),
+      progressInput: {
+        users: [progressUser({
+          id: "mygo",
+          githubUsername: "whoisyourbias",
+          activity: [{ date: "2026-08-15", solved: 1 }],
+        })],
+      },
+      pendingActivity: { whoisyourbias: ["2026-08-17"] },
+    });
+    expect(targets).toEqual([]);
+  });
 });
 
 describe("inactive reminder dates and rendering", () => {
@@ -121,30 +137,48 @@ describe("inactive reminder delivery", () => {
 
   it("skips posting when today's managed marker already exists", async () => {
     const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ state: "open" }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify([{ body: "<!-- leetdash-reminder:2026-08-10 -->" }]), { status: 200 }));
     const result = await sendInactiveReminders({ ...baseOptions, fetchImpl });
     expect(result.status).toBe("duplicate");
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 
   it("posts one comment to an open issue", async () => {
     const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ state: "open" }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 }), { status: 201 }));
     const result = await sendInactiveReminders({ ...baseOptions, fetchImpl });
     expect(result).toEqual({ status: "sent", dateKey: "2026-08-10", targetCount: 1 });
-    const [url, request] = fetchImpl.mock.calls[2];
+    const [url, request] = fetchImpl.mock.calls[3];
     expect(url).toBe("https://api.github.test/repos/owner/repo/issues/42/comments");
     expect(request.method).toBe("POST");
     expect(JSON.parse(request.body).body).toContain("@ada");
   });
 
   it("fails when the configured issue is closed", async () => {
-    const fetchImpl = vi.fn().mockResolvedValueOnce(
-      new Response(JSON.stringify({ state: "closed" }), { status: 200 }),
-    );
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ state: "closed" }), { status: 200 }));
     await expect(sendInactiveReminders({ ...baseOptions, fetchImpl })).rejects.toThrow("must be an open issue");
+  });
+
+  it("does not alert a user whose recent solution is waiting in an open pull request", async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ number: 250, user: { login: "ada" } }]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{
+        filename: "submissions/ada/programmers/12946/Solution.java",
+        status: "added",
+      }]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{
+        commit: { committer: { date: "2026-08-09T08:24:17Z" } },
+      }]), { status: 200 }));
+
+    const result = await sendInactiveReminders({ ...baseOptions, fetchImpl });
+    expect(result).toEqual({ status: "no-targets", dateKey: "2026-08-10", targetCount: 0 });
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 });
