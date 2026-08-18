@@ -379,15 +379,18 @@ const providerList = (problem, title) => ({
 
 async function main() {
   const SHOULD_FETCH_LEETCODE = LEETCODE_ONLY || (!inputPath && !SWEA_ONLY);
-  const existingCatalog = LEETCODE_ONLY || SWEA_ONLY
+  const existingCatalog = LEETCODE_ONLY || SWEA_ONLY || !inputPath
     ? JSON.parse(readFileSync(resolve(root, "data/problem-catalog.json"), "utf8"))
     : null;
+  const curatedLists = existingCatalog?.lists.filter((list) =>
+    !["top-interview-easy", "leetcode-75", "top-interview-150", "leetcode", "programmers", "swea"].includes(list.key),
+  ) ?? [];
   // Base LeetCode lists
   const lists = LEETCODE_ONLY
     ? existingCatalog.lists.filter((list) => list.key !== "leetcode")
     : SWEA_ONLY
       ? [...existingCatalog.lists]
-    : [topInterviewEasy, leetcode75, topInterview150];
+    : [topInterviewEasy, leetcode75, topInterview150, ...curatedLists];
 
   if (SHOULD_FETCH_LEETCODE) {
     console.error("[build-catalog] Fetching all LeetCode problems from GraphQL...");
