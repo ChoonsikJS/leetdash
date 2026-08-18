@@ -462,6 +462,20 @@ async function main() {
     console.error(`[build-catalog] SWEA: ${sweaList.problems.length} problems added`);
   }
 
+  if (!inputPath && !LEETCODE_ONLY && !SWEA_ONLY) {
+    const preferredOrder = [
+      "top-interview-easy",
+      "leetcode-75",
+      "top-interview-150",
+      "programmers",
+      "swea",
+    ];
+    lists.sort((left, right) => {
+      const rank = (key) => key === "leetcode" ? preferredOrder.length + 1 : preferredOrder.indexOf(key) === -1 ? preferredOrder.length : preferredOrder.indexOf(key);
+      return rank(left.key) - rank(right.key);
+    });
+  }
+
   // Build unique problems map
   const problemsByKey = new Map();
   if (existingCatalog) {
