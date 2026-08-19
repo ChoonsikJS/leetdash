@@ -170,6 +170,12 @@ c, cc, cpp, cs, dart, go, java, js, kt, php, py, rb, rs, scala, sql, swift, ts
 npm run catalog:build -- /path/to/source-readme.md
 ```
 
+SWEA 목록만 최신화하려면 다른 공급자 목록을 유지하는 전용 명령을 사용합니다.
+
+```bash
+npm run catalog:build:swea
+```
+
 ## 로컬 개발
 
 ```bash
@@ -187,7 +193,7 @@ npm run progress:build
 
 ## 미풀이 사용자 알림
 
-`.github/workflows/inactive-reminders.yml`은 매일 오전 9시(Asia/Seoul)에 실행되어 고정 GitHub Issue에 미풀이 사용자를 멘션합니다. 알림 대상은 `data/users.json`에 `active: true`가 명시되어 있고 풀이 이력이 있는 사용자입니다. 마지막 풀이 후 3일째, 7일째, 이후 7일마다 알립니다.
+`.github/workflows/inactive-reminders.yml`은 매일 오전 9시(Asia/Seoul)에 실행되어 고정 GitHub Issue에 미풀이 사용자를 멘션합니다. 알림 대상은 `data/users.json`에 `active: true`가 명시되어 있고 풀이 이력이 있는 사용자입니다. 마지막 풀이 후 3일째, 7일째, 이후 7일마다 알립니다. 아직 병합되지 않은 열린 PR의 풀이도 최근 활동으로 계산합니다.
 
 운영자는 알림용 Issue를 하나 만든 뒤 저장소의 `Settings > Secrets and variables > Actions > Variables`에서 `REMINDER_ISSUE_NUMBER`를 해당 Issue 번호로 등록합니다. 같은 날짜의 workflow를 재실행해도 관리 마커를 확인하여 댓글을 중복 작성하지 않습니다. 수동 검증은 Actions의 `Inactive User Reminders` workflow에서 `Run workflow`로 실행합니다.
 

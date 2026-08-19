@@ -8,7 +8,7 @@ const recoveryWorkflow = readFileSync(".github/workflows/recover-opencode-review
 describe("OpenCode review recovery workflow", () => {
   it("publishes a trusted attempt-specific marker only after review failure", () => {
     expect(reviewWorkflow).toContain("OPENCODE_RECOVERY_MARKER_PATH: ${{ runner.temp }}/opencode-review-recovery.json");
-    expect(reviewWorkflow).toContain("name: Publish retryable failure marker\n        if: failure()");
+    expect(reviewWorkflow).toContain("name: Publish retryable failure marker\n        if: steps.opencode-review.outcome == 'failure'");
     expect(reviewWorkflow).toContain("uses: actions/upload-artifact@v4");
     expect(reviewWorkflow).toContain("name: opencode-review-retryable-${{ github.run_attempt }}-${{ steps.resolve-pr.outputs.pull-number }}-${{ steps.resolve-pr.outputs.head-sha }}");
     expect(reviewWorkflow).toContain("if-no-files-found: ignore");

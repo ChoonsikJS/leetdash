@@ -14,9 +14,9 @@ describe("problem catalog", () => {
       ["leetcode-75", 75],
       ["top-interview-150", 150],
       ["programmers", 689],
-      ["swea", 1124],
+      ["swea", 1160],
       ["programmers-high-score-kit", 47],
-      ["leetcode", 4017],
+      ["leetcode", 4029],
     ]);
   });
 
@@ -93,6 +93,10 @@ describe("problem catalog", () => {
     expect(problemByKey.get("swea:1206")).toMatchObject({
       title: "[S/W 문제해결 기본] 1일차 - View",
       difficulty: "D3",
+    });
+    expect(problemByKey.get("swea:4012")).toMatchObject({
+      title: "[모의 SW 역량테스트] 요리사",
+      difficulty: "Unknown",
     });
 
     expect(getProblem("programmers:12906")).toBe(problemByKey.get("programmers:12906"));

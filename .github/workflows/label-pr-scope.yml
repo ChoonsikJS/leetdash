@@ -1,0 +1,39 @@
+name: Label Pull Request Scope
+run-name: "label-pr-scope:#${{ github.event.pull_request.number }}"
+
+on:
+  pull_request_target:
+    branches:
+      - master
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: label-pr-scope-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Synchronize scope labels
+        run: node scripts/label-pr-scope.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_LABEL_PULL_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABEL_CHANGED_FILES: ${{ github.event.pull_request.changed_files }}

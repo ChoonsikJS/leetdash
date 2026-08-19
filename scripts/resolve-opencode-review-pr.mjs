@@ -31,6 +31,7 @@ function selectPullRequest(pulls, expected) {
     pullNumber: matches[0].number,
     baseSha: matches[0].base.sha,
     headSha: matches[0].head.sha,
+    isDraft: matches[0].draft === true,
   };
 }
 
@@ -147,7 +148,7 @@ async function main({
     const resolution = selectPullRequest(pulls, expected);
     await appendOutput(
       env.GITHUB_OUTPUT,
-      `pull-number=${resolution.pullNumber}\nbase-sha=${resolution.baseSha}\nhead-sha=${resolution.headSha}\n`,
+      `pull-number=${resolution.pullNumber}\nbase-sha=${resolution.baseSha}\nhead-sha=${resolution.headSha}\nis-draft=${resolution.isDraft}\n`,
     );
     return { exitCode: 0, resolution };
   } catch {

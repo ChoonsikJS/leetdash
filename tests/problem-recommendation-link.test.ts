@@ -5,14 +5,19 @@ import {
   getUserSubmissionRoute,
 } from "@/lib/problem-recommendation-link";
 
-function expectBalancedPlatformRecommendations(prompt: string) {
-  expect(prompt).toContain("LeetCode와 Programmers만 추천 대상으로 삼고");
-  expect(prompt).toContain("두 플랫폼의 후보를 서로 독립적으로 선정한다");
-  expect(prompt).toContain("LeetCode 3개와 Programmers 3개를 추천한다");
-  expect(prompt).toContain("3개보다 적으면 확인된 문제까지만 추천");
-  expect(prompt).toContain("해당 플랫폼에는 더 추천할 문제가 없다고 명시한다");
-  expect(prompt).toContain("부족한 수를 다른 플랫폼 문제나 추천 기준에 맞지 않는 문제로 억지로 채우지 않는다");
-  expect(prompt).toContain("플랫폼별 추천 개수와 부족 여부");
+function expectGroundedRecommendationContract(prompt: string) {
+  expect(prompt).toContain("현재 공식 문제 페이지, 저장소 카탈로그, 제출 파일/meta.json, solution 코드 추론 순");
+  expect(prompt).toContain("충돌 시 공식 페이지를 우선");
+  expect(prompt).toContain("플랫폼 Accepted로 표현하지 않는다");
+  expect(prompt).toContain("Accepted 증거가 없으면 unspecified");
+  expect(prompt).toContain("submittedAt은 Git commit 시각");
+  expect(prompt).toContain("확인할 수 없는 값은 임의로 채우지 말고 정확히 unspecified");
+  expect(prompt).toContain("LeetCode와 Programmers에서 서로 독립적으로 3개씩");
+  expect(prompt).toContain("다른 플랫폼이나 부적합한 문제로 채우지 않는다");
+  expect(prompt).toContain("우선순위");
+  expect(prompt).toContain("지금 바로 풀 문제");
+  expect(prompt).toContain("추천 이유");
+  expect(prompt).toContain("첫 3회 세션");
 }
 
 describe("problem recommendation link", () => {
@@ -22,31 +27,30 @@ describe("problem recommendation link", () => {
     );
   });
 
-  it("defines a grounded analysis and recommendation procedure", () => {
+  it("prioritizes grounded problems for the user's current situation", () => {
     const prompt = buildProblemRecommendationPrompt("submissions/ada");
 
-    expect(prompt).toContain("https://github.com/whoisyourbias/leetdash/tree/master/submissions/ada");
-    expect(prompt).toContain("모든 하위 폴더를 탐색");
-    expect(prompt).toContain("같은 문제의 중복 제출은 하나의 고유 문제로 합친다");
-    expect(prompt).toContain("주 유형만 사용하여 합계가 100%가 되게 한다");
-    expect(prompt).toContain("숙련도 부족이 아니라 학습 데이터의 공백 또는 낮은 노출로 표현한다");
-    expect(prompt).toContain("이미 푼 문제는 추천하지 않는다");
-    expect(prompt).toContain("Mermaid pie 차트");
-    expect(prompt).toContain("미풀이 문제를 최대 6개");
-    expect(prompt).toContain("확인하지 못한 사실이나 문제를 만들어내지 않는다");
-    expectBalancedPlatformRecommendations(prompt);
+    expect(prompt).toContain(getUserSubmissionRoute("submissions/ada"));
+    expect(prompt).toContain("data/problem-catalog.json");
+    expect(prompt).toContain("같은 problemKey의 중복 제출은 하나로 합치고");
+    expect(prompt).toContain("이미 푼 문제는 신규 추천에서 제외");
+    expect(prompt).toContain("적은 풀이 수를 실력 부족으로 단정하지 않는다");
+    expect(prompt).toContain("최근 풀이 유형");
+    expect(prompt).toContain("아직 다루지 않은 핵심 유형");
+    expect(prompt).toContain("6주 커리큘럼은 작성하지 않는다");
+    expect(prompt).toContain("지금 풀 문제 요약");
+    expectGroundedRecommendationContract(prompt);
   });
 
-  it("recommends a beginner path without opening a missing repository for a new user", () => {
+  it("recommends starter problems instead of a long curriculum when there are no submissions", () => {
     const prompt = buildProblemRecommendationPrompt("submissions/new-user", false);
 
     expect(prompt).not.toContain(getUserSubmissionRoute("submissions/new-user"));
-    expect(prompt).toContain("아직 제출한 풀이가 없는 처음 시작하는 사용자");
-    expect(prompt).toContain("사용자 제출 경로를 열거나 풀이 이력을 분석하지 않는다");
-    expect(prompt).toContain("기초 유형을 단계적으로 익힐 수 있는 문제 6개");
-    expect(prompt).toContain("가장 먼저 풀 문제 1개");
-    expect(prompt).toContain("정답 코드");
-    expectBalancedPlatformRecommendations(prompt);
+    expect(prompt).toContain("아직 제출 이력이 없는 입문자에게 지금 풀 문제");
+    expect(prompt).toContain("실력과 취약점을 추측하지 않는다");
+    expect(prompt).toContain("장기 커리큘럼을 만들지 않는다");
+    expect(prompt).toContain("정답 코드는 제공하지 않는다");
+    expectGroundedRecommendationContract(prompt);
   });
 
   it("opens ChatGPT search with the complete prompt", () => {
