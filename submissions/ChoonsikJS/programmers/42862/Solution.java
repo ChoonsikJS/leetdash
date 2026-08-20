@@ -5,6 +5,7 @@ class Solution {
             for (int j = 0; j < reserve.length; j++) {
                 if (lost[i] == reserve[j]){
                     reserve[j] = -1;
+                    break;
                 }
                 if (reserve[j]+1 == lost[i] || reserve[j]-1 == lost[i]) {
                     answer++;
