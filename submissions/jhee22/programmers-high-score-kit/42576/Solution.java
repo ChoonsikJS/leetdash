@@ -22,6 +22,8 @@
 //     }
 // }
 
+
+// 2트 
 import java.util.*; 
 class Solution {
     public String solution(String[] participant, String[] completion) {
@@ -38,7 +40,7 @@ class Solution {
             partMap.put(completion[i], partMap.getOrDefault(completion[i], 0)-1); 
         }
         
-        // 이거 처음봄 
+        // Map 순회 
         for (Map.Entry<String, Integer> entry : partMap.entrySet()) {
             if (entry.getValue() > 0) {
                 answer = entry.getKey(); 
@@ -46,8 +48,6 @@ class Solution {
             }
         }
         
-            
-    
         
         return answer;
     }
