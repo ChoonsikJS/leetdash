@@ -1,37 +1,42 @@
-private int bs(long from, long to, int n, ArrayList<Integer> distances) {
-    int answer = 0;
+import java.util.*;
 
-    while (from <= to) {
-        long mid = (from + to) / 2;
+class Solution {
+    public int solution(int distance, int[] rocks, int n) {
+        Arrays.sort(rocks);
+        return bs(0, distance, n, rocks, distance);
+    }
+    
+    private int bs(long from, long to, int n, int[] rocks, int distance) {
+        long answer = 0;
 
-        int removedRocks = 0;
-        ArrayList<Integer> cloned = new ArrayList<>(distances);
+        while (from <= to) {
+            long mid = (from + to) / 2;
 
-        int i = 0;
+            int removedRocks = 0;
+            int prev = 0;
 
-        while (i < cloned.size() - 1) {
-            if (cloned.get(i) < mid) {
-                cloned.set(i + 1,
-                        cloned.get(i) + cloned.get(i + 1));
-
-                cloned.remove(i);
-
-                i = Math.max(0, --i);
+            for (int rock : rocks) {
+                if (rock - prev < mid) {
+                    removedRocks++;
+                } else {
+                    prev = rock;
+                }
+            }
+            
+            if (distance - rocks[prev] < mid)
                 removedRocks++;
+
+            if (removedRocks <= n) {
+                // mid 가능 → 더 큰 값 탐색
+                answer = mid;
+                from = mid + 1;
             } else {
-                i++;
+                // mid 불가능 → 더 작은 값 탐색
+                to = mid - 1;
             }
         }
 
-        if (removedRocks <= n) {
-            // mid 가능 → 더 큰 값 탐색
-            answer = (int) mid;
-            from = mid + 1;
-        } else {
-            // mid 불가능 → 더 작은 값 탐색
-            to = mid - 1;
-        }
+        return (int) answer;
     }
-
-    return answer;
+    
 }
