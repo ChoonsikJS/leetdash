@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.Map.*;
 
 class Solution {
     public int solution(int N, int number) {
@@ -7,7 +8,7 @@ class Solution {
         ArrayList<HashSet<Integer>> DP = new ArrayList<>();
         HashSet<Integer> possibles = new HashSet<>();
 
-        while (answer < 9) {
+        while (answer < 10) {
             if (possibles.contains(number))
                 break;
             
@@ -41,7 +42,7 @@ class Solution {
             answer++;
         }
         
-        if (answer > 8)
+        if (answer >= 8)
             return -1;
         return answer;
     }
