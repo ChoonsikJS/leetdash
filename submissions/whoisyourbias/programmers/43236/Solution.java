@@ -23,7 +23,7 @@ class Solution {
                 }
             }
             
-            if (distance - rocks[prev] < mid)
+            if (distance - prev < mid)
                 removedRocks++;
 
             if (removedRocks <= n) {
