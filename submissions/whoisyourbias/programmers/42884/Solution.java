@@ -6,17 +6,16 @@ class Solution {
         
         Arrays.sort(routes, (a, b) -> a[1] - b[1]);
         
-        for (int[] route: routes) {
-            System.out.printf("%d %d | ", route[0], route[1]);
-        }
         
         
+        int lastInstalledPos = routes[0][1];
+        answer++;
         for (int i = 1; i < routes.length; i++) {
-            if (routes[i - 1][1] >= routes[i][0]) {
+            if (routes[i][0] <= lastInstalledPos)
+                continue;
+            else {
                 answer++;
-                i++;
-            } else {
-                answer++;
+                lastInstalledPos = routes[i][1];
             }
         }
         
