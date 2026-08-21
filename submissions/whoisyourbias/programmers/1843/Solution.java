@@ -9,7 +9,7 @@ class Solution {
     // DP의 깊이는 Operator의 개수
     // 
     
-    // BFS로 풀면, 모든 경우의 수가 201! 이라서 시간초과.
+    // BFS로 풀면, 모든 경우의 수가Catalan 수 형태로 증가이라서 시간초과.
     // DP를 사용해서 각 구간별 연산을 미리 해놓고 사용해야한다.
     public int solution(String arr[]) {
         final int NumberCount = (arr.length+1) /2;
