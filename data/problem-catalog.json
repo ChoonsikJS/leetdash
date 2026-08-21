@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15",
+  "generatedAt": "2026-08-18",
   "sources": [
     "https://leetcode.com/explore/featured/card/top-interview-questions-easy/",
     "https://leetcode.com/studyplan/leetcode-75/",
@@ -15150,7 +15150,7 @@
           "provider": "swea",
           "problemId": "3142",
           "problemKey": "swea:3142",
-          "title": "영준이와 신��한 뿔의 숲",
+          "title": "영준이와 신비한 뿔의 숲",
           "difficulty": "D3",
           "sourceUrl": "https://swexpertacademy.com/main/code/problem/problemDetail.do?problemId=3142"
         },
@@ -66523,6 +66523,114 @@
           "title": "Peaks in Array II",
           "difficulty": "hard",
           "sourceUrl": "https://leetcode.com/problems/peaks-in-array-ii/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4018",
+          "problemKey": "leetcode:4018",
+          "slug": "total-sum-of-interaction-cost-in-tree-groups-ii",
+          "title": "Total Sum of Interaction Cost in Tree Groups II",
+          "difficulty": "hard",
+          "sourceUrl": "https://leetcode.com/problems/total-sum-of-interaction-cost-in-tree-groups-ii/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4019",
+          "problemKey": "leetcode:4019",
+          "slug": "merge-close-characters-ii",
+          "title": "Merge Close Characters II",
+          "difficulty": "medium",
+          "sourceUrl": "https://leetcode.com/problems/merge-close-characters-ii/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4020",
+          "problemKey": "leetcode:4020",
+          "slug": "elevator-requests-i",
+          "title": "Elevator Requests I",
+          "difficulty": "easy",
+          "sourceUrl": "https://leetcode.com/problems/elevator-requests-i/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4021",
+          "problemKey": "leetcode:4021",
+          "slug": "minimum-operations-to-make-a-rotated-palindrome-i",
+          "title": "Minimum Operations to Make a Rotated Palindrome I",
+          "difficulty": "medium",
+          "sourceUrl": "https://leetcode.com/problems/minimum-operations-to-make-a-rotated-palindrome-i/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4022",
+          "problemKey": "leetcode:4022",
+          "slug": "k-th-digit-in-infinite-string",
+          "title": "K-th Digit in Infinite String",
+          "difficulty": "medium",
+          "sourceUrl": "https://leetcode.com/problems/k-th-digit-in-infinite-string/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4023",
+          "problemKey": "leetcode:4023",
+          "slug": "elevator-requests-ii",
+          "title": "Elevator Requests II",
+          "difficulty": "hard",
+          "sourceUrl": "https://leetcode.com/problems/elevator-requests-ii/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4024",
+          "problemKey": "leetcode:4024",
+          "slug": "nearest-available-drone",
+          "title": "Nearest Available Drone",
+          "difficulty": "easy",
+          "sourceUrl": "https://leetcode.com/problems/nearest-available-drone/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4025",
+          "problemKey": "leetcode:4025",
+          "slug": "minimize-the-maximum-waiting-time-at-synchronized-traffic-lights",
+          "title": "Minimize the Maximum Waiting Time at Synchronized Traffic Lights",
+          "difficulty": "medium",
+          "sourceUrl": "https://leetcode.com/problems/minimize-the-maximum-waiting-time-at-synchronized-traffic-lights/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4026",
+          "problemKey": "leetcode:4026",
+          "slug": "maximum-gap-between-stations",
+          "title": "Maximum Gap Between Stations",
+          "difficulty": "medium",
+          "sourceUrl": "https://leetcode.com/problems/maximum-gap-between-stations/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4027",
+          "problemKey": "leetcode:4027",
+          "slug": "elevator-requests-iii",
+          "title": "Elevator Requests III",
+          "difficulty": "hard",
+          "sourceUrl": "https://leetcode.com/problems/elevator-requests-iii/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4029",
+          "problemKey": "leetcode:4029",
+          "slug": "minimum-operations-to-make-a-rotated-palindrome-ii",
+          "title": "Minimum Operations to Make a Rotated Palindrome II",
+          "difficulty": "hard",
+          "sourceUrl": "https://leetcode.com/problems/minimum-operations-to-make-a-rotated-palindrome-ii/"
+        },
+        {
+          "provider": "leetcode",
+          "problemId": "4030",
+          "problemKey": "leetcode:4030",
+          "slug": "elevator-requests-iv",
+          "title": "Elevator Requests IV",
+          "difficulty": "hard",
+          "sourceUrl": "https://leetcode.com/problems/elevator-requests-iv/"
         }
       ],
       "items": [
@@ -90627,6 +90735,78 @@
           "order": 4017,
           "section": "hard",
           "submissionKey": "4017"
+        },
+        {
+          "problemKey": "leetcode:4018",
+          "order": 4018,
+          "section": "hard",
+          "submissionKey": "4018"
+        },
+        {
+          "problemKey": "leetcode:4019",
+          "order": 4019,
+          "section": "medium",
+          "submissionKey": "4019"
+        },
+        {
+          "problemKey": "leetcode:4020",
+          "order": 4020,
+          "section": "easy",
+          "submissionKey": "4020"
+        },
+        {
+          "problemKey": "leetcode:4021",
+          "order": 4021,
+          "section": "medium",
+          "submissionKey": "4021"
+        },
+        {
+          "problemKey": "leetcode:4022",
+          "order": 4022,
+          "section": "medium",
+          "submissionKey": "4022"
+        },
+        {
+          "problemKey": "leetcode:4023",
+          "order": 4023,
+          "section": "hard",
+          "submissionKey": "4023"
+        },
+        {
+          "problemKey": "leetcode:4024",
+          "order": 4024,
+          "section": "easy",
+          "submissionKey": "4024"
+        },
+        {
+          "problemKey": "leetcode:4025",
+          "order": 4025,
+          "section": "medium",
+          "submissionKey": "4025"
+        },
+        {
+          "problemKey": "leetcode:4026",
+          "order": 4026,
+          "section": "medium",
+          "submissionKey": "4026"
+        },
+        {
+          "problemKey": "leetcode:4027",
+          "order": 4027,
+          "section": "hard",
+          "submissionKey": "4027"
+        },
+        {
+          "problemKey": "leetcode:4029",
+          "order": 4028,
+          "section": "hard",
+          "submissionKey": "4029"
+        },
+        {
+          "problemKey": "leetcode:4030",
+          "order": 4029,
+          "section": "hard",
+          "submissionKey": "4030"
         }
       ]
     }
@@ -126786,6 +126966,114 @@
       "sourceUrl": "https://leetcode.com/problems/peaks-in-array-ii/"
     },
     {
+      "provider": "leetcode",
+      "problemId": "4018",
+      "problemKey": "leetcode:4018",
+      "slug": "total-sum-of-interaction-cost-in-tree-groups-ii",
+      "title": "Total Sum of Interaction Cost in Tree Groups II",
+      "difficulty": "hard",
+      "sourceUrl": "https://leetcode.com/problems/total-sum-of-interaction-cost-in-tree-groups-ii/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4019",
+      "problemKey": "leetcode:4019",
+      "slug": "merge-close-characters-ii",
+      "title": "Merge Close Characters II",
+      "difficulty": "medium",
+      "sourceUrl": "https://leetcode.com/problems/merge-close-characters-ii/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4020",
+      "problemKey": "leetcode:4020",
+      "slug": "elevator-requests-i",
+      "title": "Elevator Requests I",
+      "difficulty": "easy",
+      "sourceUrl": "https://leetcode.com/problems/elevator-requests-i/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4021",
+      "problemKey": "leetcode:4021",
+      "slug": "minimum-operations-to-make-a-rotated-palindrome-i",
+      "title": "Minimum Operations to Make a Rotated Palindrome I",
+      "difficulty": "medium",
+      "sourceUrl": "https://leetcode.com/problems/minimum-operations-to-make-a-rotated-palindrome-i/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4022",
+      "problemKey": "leetcode:4022",
+      "slug": "k-th-digit-in-infinite-string",
+      "title": "K-th Digit in Infinite String",
+      "difficulty": "medium",
+      "sourceUrl": "https://leetcode.com/problems/k-th-digit-in-infinite-string/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4023",
+      "problemKey": "leetcode:4023",
+      "slug": "elevator-requests-ii",
+      "title": "Elevator Requests II",
+      "difficulty": "hard",
+      "sourceUrl": "https://leetcode.com/problems/elevator-requests-ii/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4024",
+      "problemKey": "leetcode:4024",
+      "slug": "nearest-available-drone",
+      "title": "Nearest Available Drone",
+      "difficulty": "easy",
+      "sourceUrl": "https://leetcode.com/problems/nearest-available-drone/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4025",
+      "problemKey": "leetcode:4025",
+      "slug": "minimize-the-maximum-waiting-time-at-synchronized-traffic-lights",
+      "title": "Minimize the Maximum Waiting Time at Synchronized Traffic Lights",
+      "difficulty": "medium",
+      "sourceUrl": "https://leetcode.com/problems/minimize-the-maximum-waiting-time-at-synchronized-traffic-lights/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4026",
+      "problemKey": "leetcode:4026",
+      "slug": "maximum-gap-between-stations",
+      "title": "Maximum Gap Between Stations",
+      "difficulty": "medium",
+      "sourceUrl": "https://leetcode.com/problems/maximum-gap-between-stations/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4027",
+      "problemKey": "leetcode:4027",
+      "slug": "elevator-requests-iii",
+      "title": "Elevator Requests III",
+      "difficulty": "hard",
+      "sourceUrl": "https://leetcode.com/problems/elevator-requests-iii/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4029",
+      "problemKey": "leetcode:4029",
+      "slug": "minimum-operations-to-make-a-rotated-palindrome-ii",
+      "title": "Minimum Operations to Make a Rotated Palindrome II",
+      "difficulty": "hard",
+      "sourceUrl": "https://leetcode.com/problems/minimum-operations-to-make-a-rotated-palindrome-ii/"
+    },
+    {
+      "provider": "leetcode",
+      "problemId": "4030",
+      "problemKey": "leetcode:4030",
+      "slug": "elevator-requests-iv",
+      "title": "Elevator Requests IV",
+      "difficulty": "hard",
+      "sourceUrl": "https://leetcode.com/problems/elevator-requests-iv/"
+    },
+    {
       "provider": "programmers",
       "problemId": "1829",
       "problemKey": "programmers:1829",
@@ -133621,7 +133909,7 @@
       "provider": "swea",
       "problemId": "3142",
       "problemKey": "swea:3142",
-      "title": "영준이와 신��한 뿔의 숲",
+      "title": "영준이와 신비한 뿔의 숲",
       "difficulty": "D3",
       "sourceUrl": "https://swexpertacademy.com/main/code/problem/problemDetail.do?problemId=3142"
     },

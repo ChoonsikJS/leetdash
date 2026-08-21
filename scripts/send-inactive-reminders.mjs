@@ -56,7 +56,7 @@ function normalizeUsersInput(input) {
   return users;
 }
 
-function selectReminderTargets({ usersInput, progressInput, today = new Date() }) {
+function selectReminderTargets({ usersInput, progressInput, pendingActivity = {}, today = new Date() }) {
   const todayKey = getSeoulDateKey(today);
   const explicitlyActiveIds = new Set(
     normalizeUsersInput(usersInput)
@@ -73,8 +73,12 @@ function selectReminderTargets({ usersInput, progressInput, today = new Date() }
       throw new Error(`Invalid GitHub username for active user ${user.id}.`);
     }
 
-    const lastActivity = Array.isArray(user.activity)
-      ? user.activity
+    const activity = [
+      ...(Array.isArray(user.activity) ? user.activity : []),
+      ...((pendingActivity[user.githubUsername] ?? []).map((date) => ({ date, solved: 1 }))),
+    ];
+    const lastActivity = activity.length > 0
+      ? activity
         .filter((day) => day?.solved > 0 && typeof day.date === "string" && day.date <= todayKey)
         .sort((left, right) => left.date.localeCompare(right.date))
         .at(-1)
@@ -88,11 +92,64 @@ function selectReminderTargets({ usersInput, progressInput, today = new Date() }
       ? [{
         id: String(user.id),
         githubUsername: user.githubUsername,
+        submissionsPath: user.submissionsPath ?? `submissions/${user.githubUsername}`,
         daysInactive,
         lastActiveDate: lastActivity.date,
       }]
       : [];
   });
+}
+
+async function listAllPages({ fetchImpl, apiUrl, repository, token, path: resourcePath }) {
+  const items = [];
+  for (let page = 1; ; page += 1) {
+    const pageItems = await githubRequest({
+      fetchImpl,
+      token,
+      url: `${apiUrl}/repos/${repository}/${resourcePath}?per_page=100&page=${page}`,
+    });
+    items.push(...pageItems);
+    if (pageItems.length < 100) return items;
+  }
+}
+
+async function findPendingSubmissionActivity({ fetchImpl, apiUrl, repository, token, targets }) {
+  const targetByUsername = new Map(targets.map((target) => [target.githubUsername, target]));
+  if (targetByUsername.size === 0) return {};
+
+  const pulls = await listAllPages({
+    fetchImpl,
+    apiUrl,
+    repository,
+    token,
+    path: "pulls",
+  });
+  const candidatePulls = pulls.filter((pull) => targetByUsername.has(pull.user?.login));
+  const activity = {};
+
+  await Promise.all(candidatePulls.map(async (pull) => {
+    const username = pull.user.login;
+    const target = targetByUsername.get(username);
+    const [files, commits] = await Promise.all([
+      listAllPages({ fetchImpl, apiUrl, repository, token, path: `pulls/${pull.number}/files` }),
+      listAllPages({ fetchImpl, apiUrl, repository, token, path: `pulls/${pull.number}/commits` }),
+    ]);
+    const submissionPrefix = `${target.submissionsPath.replace(/\/+$/, "")}/`;
+    const hasSubmission = files.some((file) => (
+      file.status !== "removed" && file.filename?.startsWith(submissionPrefix)
+    ));
+    if (!hasSubmission) return;
+
+    const latestCommitDate = commits
+      .map((commit) => commit.commit?.committer?.date ?? commit.commit?.author?.date)
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+    if (!latestCommitDate) return;
+    (activity[target.githubUsername] ??= []).push(getSeoulDateKey(latestCommitDate));
+  }));
+
+  return activity;
 }
 
 function reminderMarker(dateKey) {
@@ -174,7 +231,19 @@ async function sendInactiveReminders({
 
   const currentTime = now();
   const dateKey = getSeoulDateKey(currentTime);
-  const targets = selectReminderTargets({ usersInput, progressInput, today: currentTime });
+  const initialTargets = selectReminderTargets({ usersInput, progressInput, today: currentTime });
+  if (initialTargets.length === 0) {
+    return { status: "no-targets", dateKey, targetCount: 0 };
+  }
+
+  const pendingActivity = await findPendingSubmissionActivity({
+    fetchImpl,
+    apiUrl,
+    repository,
+    token,
+    targets: initialTargets,
+  });
+  const targets = selectReminderTargets({ usersInput, progressInput, pendingActivity, today: currentTime });
   if (targets.length === 0) {
     return { status: "no-targets", dateKey, targetCount: 0 };
   }
@@ -233,6 +302,7 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
 
 export {
   daysBetween,
+  findPendingSubmissionActivity,
   getSeoulDateKey,
   isReminderDay,
   main,

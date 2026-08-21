@@ -4,6 +4,7 @@ import java.util.Queue;
 class Solution {
 
     public int solution(String begin, String target, String[] words) {
+
         boolean targetExist = false;
 
         for(String word : words) {
@@ -47,6 +48,7 @@ class Solution {
                             diff++;
                         }
                     }
+
                     if(diff == 1) {
                         visited[j] = true;
                         q.offer(words[j]);

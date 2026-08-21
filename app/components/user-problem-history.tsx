@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { formatDateTime, statusLabel } from "@/lib/format";
+import { difficultyLabel, formatDateTime, statusLabel } from "@/lib/format";
 import { formatCatalogListTitle, formatProblemTitle } from "@/lib/i18n";
 import type { UserHistoryItem } from "@/lib/progress";
 
@@ -31,7 +31,7 @@ export function UserProblemHistory({ history, userId }: { history: UserHistoryIt
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>문제</th><th>제공자</th><th>상태</th><th>언어</th><th>제출일</th><th>목록</th></tr>
+                <tr><th>문제</th><th>제공자</th><th>난이도</th><th>상태</th><th>언어</th><th>제출일</th><th>목록</th></tr>
               </thead>
               <tbody>
                 {visibleItems.map((item) => (
@@ -45,6 +45,7 @@ export function UserProblemHistory({ history, userId }: { history: UserHistoryIt
                       </Link>
                     </td>
                     <td>{item.problemProvider}</td>
+                    <td><span className="badge neutral">{difficultyLabel(item.difficulty)}</span></td>
                     <td><span className={`badge ${item.status.toLowerCase()}`}>{statusLabel(item.status)}</span></td>
                     <td className="mono">{item.language ?? "-"}</td>
                     <td>{formatDateTime(item.submittedAt ?? item.solvedAt)}</td>

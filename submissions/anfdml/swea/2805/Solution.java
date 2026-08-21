@@ -2,8 +2,6 @@ package submissions.anfdml.swea.2805;
 
 import java.util.Scanner;
 
-
-
 public class Solution {
     public static void main(String args[]) throws Exception
 	{

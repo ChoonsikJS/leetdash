@@ -23,15 +23,14 @@ describe("pull request scope label workflow", () => {
     expect(workflow).not.toContain("github.head_ref");
   });
 
-  it("uses only the permissions required to read files and manage labels", () => {
+  it("grants the pull request write permission required by live label mutations", () => {
     expect(workflow).toContain(
       "permissions:\n"
         + "  contents: read\n"
         + "  issues: write\n"
-        + "  pull-requests: read",
+        + "  pull-requests: write",
     );
     expect(workflow).not.toContain("contents: write");
-    expect(workflow).not.toContain("pull-requests: write");
     expect(workflow).not.toContain("write-all");
   });
 
