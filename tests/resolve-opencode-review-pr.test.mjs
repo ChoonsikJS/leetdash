@@ -40,6 +40,7 @@ describe("selectPullRequest", () => {
       pullNumber: 49,
       baseSha: sha("b"),
       headSha: sha("c"),
+      isDraft: false,
     });
   });
 
@@ -162,13 +163,14 @@ describe("resolver CLI", () => {
         pullNumber: 49,
         baseSha: sha("b"),
         headSha: sha("c"),
+        isDraft: false,
       },
     });
 
     expect(appendOutput).toHaveBeenCalledOnce();
     expect(appendOutput).toHaveBeenCalledWith(
       "/tmp/github-output",
-      `pull-number=49\nbase-sha=${sha("b")}\nhead-sha=${sha("c")}\n`,
+      `pull-number=49\nbase-sha=${sha("b")}\nhead-sha=${sha("c")}\nis-draft=false\n`,
     );
     expect(stderr).not.toHaveBeenCalled();
   });

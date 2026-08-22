@@ -1,5 +1,11 @@
 {
     "users": [
+		{
+            "id": "admin",
+            "displayName": "운영자",
+            "githubUsername": "koreanddinghwan",
+            "active": true
+		},
         {
             "id": "mygo",
             "displayName": "강명환",

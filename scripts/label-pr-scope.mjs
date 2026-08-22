@@ -9,10 +9,20 @@ const maxPullRequestFiles = 3000;
 const repositoryPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
 class PullRequestLabelFailure extends Error {
-  constructor() {
-    super(failureMessage);
+  constructor(detail = "") {
+    super(detail ? `${failureMessage} ${detail}` : failureMessage);
     this.name = "PullRequestLabelFailure";
   }
+}
+
+function safeRequestId(response) {
+  const requestId = response?.headers?.get?.("x-github-request-id") ?? "";
+  return /^[A-Za-z0-9:-]{1,128}$/.test(requestId) ? requestId : "unavailable";
+}
+
+function requestDetail(method, apiPath, response, outcome) {
+  const status = Number.isInteger(response?.status) ? response.status : "unavailable";
+  return `GitHub API ${method} ${apiPath} ${outcome}; status=${status}; request-id=${safeRequestId(response)}.`;
 }
 
 function validRepository(value) {
@@ -71,22 +81,31 @@ class GitHubPullRequestLabelClient {
   }
 
   async request(apiPath, { method = "GET", body } = {}) {
-    const response = await this.fetchImpl(`https://api.github.com/repos/${this.repository}${apiPath}`, {
-      method,
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${this.token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    });
-    if (!response?.ok) throw new PullRequestLabelFailure();
+    let response;
+    try {
+      response = await this.fetchImpl(`https://api.github.com/repos/${this.repository}${apiPath}`, {
+        method,
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${this.token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+          ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      });
+    } catch {
+      throw new PullRequestLabelFailure(
+        requestDetail(method, apiPath, undefined, "failed before receiving a response"),
+      );
+    }
+    if (!response?.ok) {
+      throw new PullRequestLabelFailure(requestDetail(method, apiPath, response, "returned an error"));
+    }
     if (response.status === 204) return undefined;
     try {
       return await response.json();
     } catch {
-      throw new PullRequestLabelFailure();
+      throw new PullRequestLabelFailure(requestDetail(method, apiPath, response, "returned invalid JSON"));
     }
   }
 
@@ -108,7 +127,11 @@ class GitHubPullRequestLabelClient {
       files.push(...pageFiles);
       if (files.length >= expectedCount || pageFiles.length < 100) break;
     }
-    if (files.length !== expectedCount) throw new PullRequestLabelFailure();
+    if (files.length !== expectedCount) {
+      throw new PullRequestLabelFailure(
+        `GitHub API returned ${files.length} pull request files; expected ${expectedCount}.`,
+      );
+    }
     return files;
   }
 
@@ -211,8 +234,8 @@ async function main({
     });
     stdout(`Synchronized pull request labels: ${result.labels.join(", ")}`);
     return { exitCode: 0, ...result };
-  } catch {
-    stderr(failureMessage);
+  } catch (error) {
+    stderr(error instanceof PullRequestLabelFailure ? error.message : failureMessage);
     return { exitCode: 1 };
   }
 }
