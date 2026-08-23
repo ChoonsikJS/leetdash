@@ -24,6 +24,8 @@ const solutionExtensions = new Set([
   "swift",
   "ts",
 ]);
+const dynamicSweaProblemIdPattern = /^\d{1,8}$/;
+const sweaDifficulties = new Set(["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "Attack", "Unknown"]);
 
 const repoRoot = process.cwd();
 const catalogPath = path.join(repoRoot, "data", "problem-catalog.json");
@@ -360,6 +362,100 @@ async function parseMeta(metaPath) {
   }
 }
 
+function normalizeDynamicSweaProblem(raw, problemId) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return undefined;
+  }
+  const title = typeof raw.title === "string" ? raw.title.trim() : "";
+  let sourceUrl;
+  try {
+    sourceUrl = new URL(raw.sourceUrl);
+  } catch {
+    sourceUrl = undefined;
+  }
+  if (
+    raw.provider !== "swea"
+    || raw.problemId !== problemId
+    || !title
+    || title !== raw.title
+    || title.length > 200
+    || /[\u0000-\u001f\u007f]/.test(title)
+    || !sweaDifficulties.has(raw.difficulty)
+    || typeof raw.sourceUrl !== "string"
+    || raw.sourceUrl.length > 2048
+    || !sourceUrl
+    || sourceUrl.protocol !== "https:"
+    || sourceUrl.username
+    || sourceUrl.password
+    || !["swexpertacademy.com", "www.swexpertacademy.com"].includes(sourceUrl.hostname)
+  ) {
+    return undefined;
+  }
+  return {
+    provider: "swea",
+    problemId,
+    problemKey: `swea:${problemId}`,
+    title,
+    difficulty: raw.difficulty,
+    sourceUrl: raw.sourceUrl,
+  };
+}
+
+async function discoverDynamicSweaProblems({ catalog, users, allPaths }) {
+  const knownProblemKeys = new Set((catalog.problems ?? []).map((problem) => problem.problemKey));
+  const discovered = new Map();
+  const sortedPaths = [...allPaths].sort((left, right) => left.localeCompare(right));
+
+  for (const user of users) {
+    const prefix = `${user.submissionsPath}/swea/`;
+    for (const relativePath of sortedPaths) {
+      if (!relativePath.startsWith(prefix)) continue;
+      const remainder = relativePath.slice(prefix.length);
+      const [problemId, filename, ...extra] = remainder.split("/");
+      if (extra.length > 0 || !dynamicSweaProblemIdPattern.test(problemId)) continue;
+      const normalizedFilename = filename?.toLowerCase();
+      const isMeta = normalizedFilename === "meta.json";
+      const solutionParts = filename?.split(".") ?? [];
+      const isSolution = solutionParts.length === 2
+        && solutionParts[0].toLowerCase() === "solution"
+        && solutionExtensions.has(solutionParts[1].toLowerCase());
+      const problemKey = `swea:${problemId}`;
+      const existing = discovered.get(problemKey);
+      if ((!isMeta && !isSolution) || knownProblemKeys.has(problemKey) || existing?.hasSnapshot) continue;
+
+      let problem;
+      const metaPath = `${prefix}${problemId}/meta.json`;
+      if (allPaths.has(metaPath)) {
+        try {
+          const meta = JSON.parse(await readFile(path.join(repoRoot, metaPath), "utf8"));
+          problem = normalizeDynamicSweaProblem(meta.problem, problemId);
+        } catch {
+          // Invalid legacy metadata falls back to a stable numeric problem identity.
+        }
+      }
+      if (problem) {
+        discovered.set(problemKey, { problem, hasSnapshot: true });
+      } else if (!existing) {
+        discovered.set(problemKey, {
+          hasSnapshot: false,
+          problem: {
+            provider: "swea",
+            problemId,
+            problemKey,
+            title: `SWEA ${problemId}`,
+            difficulty: "Unknown",
+            sourceUrl: `https://swexpertacademy.com/main/code/problem/problemDetail.do?problemId=${problemId}`,
+          },
+        });
+      }
+    }
+  }
+
+  return [...discovered.values()]
+    .map((entry) => entry.problem)
+    .sort((left, right) => Number(left.problemId) - Number(right.problemId));
+}
+
 function findSolutionPath(paths, submissionRoot) {
   const solutionPrefix = `${submissionRoot}/`;
   for (const relativePath of paths) {
@@ -528,8 +624,16 @@ async function buildProgress() {
   const [catalog, usersInput] = await Promise.all([readJson(catalogPath), readJson(usersPath)]);
   const generatedAt = new Date().toISOString();
   const users = normalizeUsers(usersInput);
-  const submissionTargets = getSubmissionTargets(catalog);
   const allPaths = new Set((await listFiles(repoRoot)).map((filePath) => toPosixPath(path.relative(repoRoot, filePath))));
+  const dynamicProblems = await discoverDynamicSweaProblems({ catalog, users, allPaths });
+  const submissionTargets = [
+    ...getSubmissionTargets(catalog),
+    ...dynamicProblems.map((problem) => ({
+      sourceKey: "swea",
+      submissionKey: problem.problemId,
+      problemKey: problem.problemKey,
+    })),
+  ];
 
   const usersWithSubmissions = [];
   for (const user of users) {
@@ -547,6 +651,7 @@ async function buildProgress() {
     `${JSON.stringify(
       {
         generatedAt,
+        dynamicProblems,
         users: usersWithSubmissions,
       },
       null,

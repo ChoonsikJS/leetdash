@@ -35,6 +35,110 @@ async function commitAll(repo: string, message: string, timestamp: string) {
 }
 
 describe("build-progress", () => {
+  it("discovers uncatalogued numeric SWEA submissions and preserves a valid problem snapshot", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "progress-radar-dynamic-swea-"));
+    const problemDir = path.join(repo, "submissions", "ada", "swea", "76543210");
+    await mkdir(path.join(repo, "data"), { recursive: true });
+    await mkdir(problemDir, { recursive: true });
+    await writeJson(path.join(repo, "data", "problem-catalog.json"), {
+      problems: [],
+      lists: [{ key: "swea", items: [] }],
+    });
+    await writeJson(path.join(repo, "data", "users.json"), {
+      users: [{ id: "ada", displayName: "Ada Lovelace", githubUsername: "ada" }],
+    });
+    await writeFile(path.join(problemDir, "Solution.java"), "class Solution {}\n");
+    await writeJson(path.join(problemDir, "meta.json"), {
+      status: "solved",
+      problem: {
+        provider: "swea",
+        problemId: "76543210",
+        title: "사용자 정의 문제",
+        difficulty: "Attack",
+        sourceUrl: "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=example",
+      },
+    });
+
+    await execFileAsync(process.execPath, [scriptPath], { cwd: repo });
+
+    const progress = JSON.parse(await readFile(path.join(repo, "data", "progress.json"), "utf8"));
+    expect(progress.dynamicProblems).toEqual([
+      {
+        provider: "swea",
+        problemId: "76543210",
+        problemKey: "swea:76543210",
+        title: "사용자 정의 문제",
+        difficulty: "Attack",
+        sourceUrl: "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=example",
+      },
+    ]);
+    expect(progress.users[0].submissions).toEqual([
+      expect.objectContaining({
+        problemKey: "swea:76543210",
+        sourceKey: "swea",
+        submissionKey: "76543210",
+        status: "SOLVED",
+      }),
+    ]);
+  });
+
+  it("uses stable fallback metadata for an uncatalogued SWEA solution without meta.json", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "progress-radar-dynamic-swea-fallback-"));
+    const problemDir = path.join(repo, "submissions", "ada", "swea", "87654321");
+    await mkdir(path.join(repo, "data"), { recursive: true });
+    await mkdir(problemDir, { recursive: true });
+    await writeJson(path.join(repo, "data", "problem-catalog.json"), {
+      problems: [],
+      lists: [{ key: "swea", items: [] }],
+    });
+    await writeJson(path.join(repo, "data", "users.json"), {
+      users: [{ id: "ada", displayName: "Ada Lovelace", githubUsername: "ada" }],
+    });
+    await writeFile(path.join(problemDir, "solution.py"), "# solved\n");
+
+    await execFileAsync(process.execPath, [scriptPath], { cwd: repo });
+
+    const progress = JSON.parse(await readFile(path.join(repo, "data", "progress.json"), "utf8"));
+    expect(progress.dynamicProblems[0]).toMatchObject({
+      problemKey: "swea:87654321",
+      title: "SWEA 87654321",
+      difficulty: "Unknown",
+    });
+    expect(progress.users[0].submissions[0].problemKey).toBe("swea:87654321");
+  });
+
+  it("prefers the first valid registered-user snapshot over an earlier fallback", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "progress-radar-dynamic-swea-precedence-"));
+    await mkdir(path.join(repo, "data"), { recursive: true });
+    await mkdir(path.join(repo, "submissions", "ada", "swea", "76543210"), { recursive: true });
+    await mkdir(path.join(repo, "submissions", "grace", "swea", "76543210"), { recursive: true });
+    await writeJson(path.join(repo, "data", "problem-catalog.json"), {
+      problems: [],
+      lists: [{ key: "swea", items: [] }],
+    });
+    await writeJson(path.join(repo, "data", "users.json"), {
+      users: [
+        { id: "ada", displayName: "Ada Lovelace", githubUsername: "ada" },
+        { id: "grace", displayName: "Grace Hopper", githubUsername: "grace" },
+      ],
+    });
+    await writeFile(path.join(repo, "submissions", "ada", "swea", "76543210", "Solution.java"), "class Solution {}\n");
+    await writeJson(path.join(repo, "submissions", "grace", "swea", "76543210", "meta.json"), {
+      problem: {
+        provider: "swea",
+        problemId: "76543210",
+        title: "신뢰할 수 있는 스냅샷",
+        difficulty: "D4",
+        sourceUrl: "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=example",
+      },
+    });
+
+    await execFileAsync(process.execPath, [scriptPath], { cwd: repo });
+
+    const progress = JSON.parse(await readFile(path.join(repo, "data", "progress.json"), "utf8"));
+    expect(progress.dynamicProblems[0]).toMatchObject({ title: "신뢰할 수 있는 스냅샷", difficulty: "D4" });
+  });
+
   it("keeps the same numeric problem ID distinct across providers", async () => {
     const repo = await mkdtemp(path.join(tmpdir(), "progress-radar-providers-"));
     await mkdir(path.join(repo, "data"), { recursive: true });
