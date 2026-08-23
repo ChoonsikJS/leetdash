@@ -114,6 +114,54 @@ describe("validate-submission-pr", () => {
     expect(result.githubOutput).toBe("submission_only=true\n");
   });
 
+  it("accepts a numeric SWEA problem that is not in the checked-in catalog", async () => {
+    const repo = await createRepoFixture();
+    const problemDir = path.join(repo, "submissions", "ada", "swea", "76543210");
+    await mkdir(problemDir, { recursive: true });
+    await writeFile(path.join(problemDir, "Solution.java"), "class Solution {}\n");
+    await writeJson(path.join(problemDir, "meta.json"), {
+      status: "solved",
+      language: "Java",
+      solvedAt: "2026-08-23T12:00:00.000Z",
+      problem: {
+        provider: "swea",
+        problemId: "76543210",
+        title: "사용자 정의 문제",
+        difficulty: "Unknown",
+        sourceUrl: "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=example",
+      },
+    });
+
+    const result = await runValidator(
+      repo,
+      "A\tsubmissions/ada/swea/76543210/Solution.java\nA\tsubmissions/ada/swea/76543210/meta.json\n",
+    );
+
+    expect(result.stdout).toContain("validated 2 changed submission file(s)");
+  });
+
+  it("rejects malformed dynamic SWEA IDs and mismatched problem snapshots", async () => {
+    const repo = await createRepoFixture();
+    const problemDir = path.join(repo, "submissions", "ada", "swea", "new-problem");
+    await mkdir(problemDir, { recursive: true });
+    await writeJson(path.join(problemDir, "meta.json"), {
+      problem: {
+        provider: "swea",
+        problemId: "123",
+        title: "잘못된 경로",
+        difficulty: "D9",
+        sourceUrl: "https://example.com/problem/123",
+      },
+    });
+
+    await expect(runValidator(repo, "A\tsubmissions/ada/swea/new-problem/meta.json\n")).rejects.toMatchObject({
+      stderr: expect.stringContaining("swea/new-problem is not in data/problem-catalog.json"),
+    });
+    await expect(runValidator(repo, "A\tsubmissions/ada/swea/new-problem/meta.json\n")).rejects.toMatchObject({
+      stderr: expect.stringContaining("problem.problemId must match the numeric SWEA submission folder"),
+    });
+  });
+
   it("keeps application changes on the full CI path", async () => {
     const repo = await createRepoFixture();
 

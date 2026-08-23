@@ -77,7 +77,7 @@ ${visibleErrors.join("\n")}
 
 1. 파일을 \`submissions/<본인 GitHub 사용자명>/<sourceKey>/<submissionKey>/\` 아래에 두세요.
 2. 파일명은 \`Solution.<지원 확장자>\`, \`README.md\`, \`meta.json\` 중 하나를 사용하세요. 지원 확장자는 \`c, cc, cpp, cs, dart, go, java, js, kt, php, py, rb, rs, scala, sql, swift, ts\`입니다.
-3. \`sourceKey/submissionKey\`가 \`data/problem-catalog.json\`에 있고 제출 경로가 PR 작성자 계정과 일치하는지 확인하세요.
+3. \`sourceKey/submissionKey\`가 \`data/problem-catalog.json\`에 있는지 확인하세요. 미등록 SWEA 문제만 \`swea/<1~8자리 문제번호>\`로 제출할 수 있으며, 제출 경로는 PR 작성자 계정과 일치해야 합니다.
 4. 수정 커밋을 push하면 검증이 다시 실행되고 이 댓글도 갱신됩니다.
 
 - 대상 커밋: \`${headSha}\`

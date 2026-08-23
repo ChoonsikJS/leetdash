@@ -56,5 +56,15 @@ export type ProgressUser = User & {
 
 export type ProgressData = {
   generatedAt: string;
+  dynamicProblems?: DynamicCatalogProblem[];
   users: ProgressUser[];
+};
+
+export type DynamicCatalogProblem = {
+  provider: "swea";
+  problemId: string;
+  problemKey: string;
+  title: string;
+  difficulty: string;
+  sourceUrl: string;
 };

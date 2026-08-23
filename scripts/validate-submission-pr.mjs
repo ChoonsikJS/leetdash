@@ -4,6 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const maxPullRequestFiles = 3000;
+const dynamicSweaProblemIdPattern = /^\d{1,8}$/;
+const sweaDifficulties = new Set(["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "Attack", "Unknown"]);
 
 const solutionExtensions = new Set([
   "c",
@@ -220,6 +222,46 @@ function validateMetaSource(filePath, source, errors = []) {
       errors.push(`${filePath}: solvedAt must be a parseable date string.`);
     }
   }
+  if (parsed.problem !== undefined) {
+    const problem = parsed.problem;
+    const parts = filePath.split("/");
+    const sourceKey = parts.at(-3);
+    const submissionKey = parts.at(-2);
+    if (!problem || typeof problem !== "object" || Array.isArray(problem)) {
+      errors.push(`${filePath}: problem must be a JSON object.`);
+    } else {
+      if (problem.provider !== "swea" || sourceKey !== "swea") {
+        errors.push(`${filePath}: problem.provider must be swea and may only be used for SWEA submissions.`);
+      }
+      if (typeof problem.problemId !== "string" || problem.problemId !== submissionKey || !dynamicSweaProblemIdPattern.test(problem.problemId)) {
+        errors.push(`${filePath}: problem.problemId must match the numeric SWEA submission folder.`);
+      }
+      const title = typeof problem.title === "string" ? problem.title.trim() : "";
+      if (!title || title !== problem.title || title.length > 200 || /[\u0000-\u001f\u007f]/.test(title)) {
+        errors.push(`${filePath}: problem.title must be a trimmed 1-200 character string without control characters.`);
+      }
+      if (typeof problem.difficulty !== "string" || !sweaDifficulties.has(problem.difficulty)) {
+        errors.push(`${filePath}: problem.difficulty must be D1-D8, Attack, or Unknown.`);
+      }
+      let sourceUrl;
+      try {
+        sourceUrl = new URL(problem.sourceUrl);
+      } catch {
+        sourceUrl = undefined;
+      }
+      if (
+        typeof problem.sourceUrl !== "string"
+        || problem.sourceUrl.length > 2048
+        || !sourceUrl
+        || sourceUrl.protocol !== "https:"
+        || sourceUrl.username
+        || sourceUrl.password
+        || !["swexpertacademy.com", "www.swexpertacademy.com"].includes(sourceUrl.hostname)
+      ) {
+        errors.push(`${filePath}: problem.sourceUrl must be a safe HTTPS SW Expert Academy URL.`);
+      }
+    }
+  }
   return errors;
 }
 
@@ -273,7 +315,8 @@ function validateSubmissionFiles(changedFiles, options = {}) {
     }
 
     const [sourceKey, submissionKey, filename] = parts;
-    if (!targets.has(`${sourceKey}/${submissionKey}`)) {
+    const isDynamicSweaTarget = sourceKey === "swea" && dynamicSweaProblemIdPattern.test(submissionKey);
+    if (!targets.has(`${sourceKey}/${submissionKey}`) && !isDynamicSweaTarget) {
       errors.push(`${filePath}: ${sourceKey}/${submissionKey} is not in data/problem-catalog.json.`);
     }
 
