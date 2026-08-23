@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart3, GitFork, House, UserRoundCheck, Users } from "lucide-react";
+import { ProblemSearchForm } from "@/app/components/problem-search-form";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <BarChart3 size={22} aria-hidden="true" />
             <span>LeetCode 진행 레이더</span>
           </Link>
+          <ProblemSearchForm />
           <nav className="top-nav" aria-label="주요 내비게이션">
             <Link href="/">
               <House size={16} aria-hidden="true" />
@@ -44,6 +46,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </nav>
         </header>
         <main>{children}</main>
+        <footer className="shell-footer">
+          <span>Leetdash</span>
+          <Link href="/privacy">개인정보처리방침</Link>
+        </footer>
       </body>
     </html>
   );

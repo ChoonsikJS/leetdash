@@ -12,7 +12,8 @@
     "typecheck": "next typegen && tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",
     "catalog:build": "node scripts/build-catalog.mjs",
-    "catalog:build:leetcode": "node scripts/build-catalog.mjs --leetcode-only"
+    "catalog:build:leetcode": "node scripts/build-catalog.mjs --leetcode-only",
+    "catalog:build:swea": "node scripts/build-catalog.mjs --swea-only"
   },
   "dependencies": {
     "lucide-react": "1.25.0",

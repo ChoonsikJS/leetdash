@@ -5,6 +5,20 @@ import { describe, expect, it } from "vitest";
 const workflow = readFileSync(".github/workflows/deploy-pages.yml", "utf8").replaceAll("\r\n", "\n");
 
 describe("deploy workflow triggers", () => {
+  it("validates pull requests again when a Draft becomes ready for review", () => {
+    expect(workflow).toContain(
+      "  pull_request:\n"
+        + "    branches:\n"
+        + "      - master\n"
+        + "    types:\n"
+        + "      - opened\n"
+        + "      - reopened\n"
+        + "      - synchronize\n"
+        + "      - ready_for_review\n",
+    );
+    expect(workflow).not.toContain("converted_to_draft");
+  });
+
   it("uploads and deploys Pages for both push and workflow dispatch runs", () => {
     expect(workflow).toContain("if: github.event_name != 'pull_request'\n        run: touch out/.nojekyll");
     expect(workflow).toContain("if: github.event_name != 'pull_request'\n        uses: actions/upload-pages-artifact@v4");

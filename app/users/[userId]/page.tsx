@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActivityCalendar } from "@/app/components/activity-calendar";
+import { DashboardTabs } from "@/app/components/dashboard-tabs";
 import { FilterableUserProblemLists } from "@/app/components/filterable-user-problem-lists";
+import { UserDifficultyAnalysis } from "@/app/components/user-difficulty-analysis";
 import { UserProblemHistory } from "@/app/components/user-problem-history";
 import { FirstUnsolvedProblemScroller } from "@/app/components/first-unsolved-problem-scroller";
 import { formatDateKey, formatPercent } from "@/lib/format";
@@ -28,7 +30,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ use
     notFound();
   }
 
-  const { user, lists, providers, history, activityCalendar } = detail;
+  const { user, lists, providers, difficultyAnalysis, history, activityCalendar } = detail;
   const { firstUnsolvedProblemTarget } = detail;
 
   return (
@@ -58,50 +60,68 @@ export default async function UserDetailPage({ params }: { params: Promise<{ use
         </a>
       </div>
 
-      <section className="list-grid" aria-label="사용자 진행 현황">
-        {lists.map((list) => (
-          <Link className="list-card" href={`/lists/${list.key}`} key={list.key}>
-            <h3>{formatCatalogListTitle(list.title)}</h3>
-            <div className="progress-meta">
-              <span className="muted">
-                {list.progress.solved}/{list.progress.total} 풀이 완료
-              </span>
-              <strong>{formatPercent(list.progress.percent)}</strong>
-            </div>
-            <div className="bar">
-              <div className="bar-fill" style={{ width: `${Math.min(list.progress.percent, 100)}%` }} />
-            </div>
-          </Link>
-        ))}
-      </section>
+      <DashboardTabs
+        tabs={[
+          {
+            id: "overview",
+            label: "현황",
+            summary: "진행률과 풀이 이력",
+            children: (
+              <>
+                <section className="list-grid" aria-label="사용자 진행 현황">
+                  {lists.map((list) => (
+                    <Link className="list-card" href={`/lists/${list.key}`} key={list.key}>
+                      <h3>{formatCatalogListTitle(list.title)}</h3>
+                      <div className="progress-meta">
+                        <span className="muted">
+                          {list.progress.solved}/{list.progress.total} 풀이 완료
+                        </span>
+                        <strong>{formatPercent(list.progress.percent)}</strong>
+                      </div>
+                      <div className="bar">
+                        <div className="bar-fill" style={{ width: `${Math.min(list.progress.percent, 100)}%` }} />
+                      </div>
+                    </Link>
+                  ))}
+                </section>
 
-      <section className="panel activity-panel" aria-labelledby="user-activity-title">
-        <div className="panel-header">
-          <div>
-            <h2 id="user-activity-title">활동 달력</h2>
-            <p className="panel-subtitle">최근 90일 동안 master에 추가된 풀이입니다</p>
-          </div>
-          <div className="activity-summary compact">
-            <span>
-              최근 90일 <strong>{activityCalendar.totalSolved}</strong>개
-            </span>
-            <span>최근 활동 {formatDateKey(activityCalendar.lastActiveDate)}</span>
-          </div>
-        </div>
-        <div className="activity-detail-calendar">
-          <ActivityCalendar calendar={activityCalendar} label={`${user.displayName} 최근 90일 활동`} />
-        </div>
-      </section>
+                <section className="panel activity-panel" aria-labelledby="user-activity-title">
+                  <div className="panel-header">
+                    <div>
+                      <h2 id="user-activity-title">활동 달력</h2>
+                      <p className="panel-subtitle">최근 90일 동안 master에 추가된 풀이입니다</p>
+                    </div>
+                    <div className="activity-summary compact">
+                      <span>
+                        최근 90일 <strong>{activityCalendar.totalSolved}</strong>개
+                      </span>
+                      <span>최근 활동 {formatDateKey(activityCalendar.lastActiveDate)}</span>
+                    </div>
+                  </div>
+                  <div className="activity-detail-calendar">
+                    <ActivityCalendar calendar={activityCalendar} label={`${user.displayName} 최근 90일 활동`} />
+                  </div>
+                </section>
 
-      <FilterableUserProblemLists
-        lists={lists}
-        providerLists={providers}
-        firstUnsolvedProblemTarget={firstUnsolvedProblemTarget}
-        profileUserId={user.id}
+                <FilterableUserProblemLists
+                  lists={lists}
+                  providerLists={providers}
+                  firstUnsolvedProblemTarget={firstUnsolvedProblemTarget}
+                  profileUserId={user.id}
+                />
+
+                <UserProblemHistory history={history} userId={user.id} />
+              </>
+            ),
+          },
+          {
+            id: "analysis",
+            label: "분석",
+            summary: "공급자별 난이도",
+            children: <UserDifficultyAnalysis analysis={difficultyAnalysis} userName={user.displayName} />,
+          },
+        ]}
       />
-
-      <UserProblemHistory history={history} userId={user.id} />
-
     </div>
   );
 }

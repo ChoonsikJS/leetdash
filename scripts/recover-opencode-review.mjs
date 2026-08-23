@@ -145,6 +145,7 @@ function validatePullRequest(pullRequest, { baseBranch, marker }) {
     && pullRequest.state === "open"
     && pullRequest.base?.ref === baseBranch
     && pullRequest.head?.sha === marker.headSha
+    && pullRequest.draft !== true
   );
 }
 
